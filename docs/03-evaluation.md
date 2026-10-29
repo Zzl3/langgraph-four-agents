@@ -17,6 +17,7 @@
 - [`real_qwen2_video_normal_after_prompt.json`](../examples/outputs/real_qwen2_video_normal_after_prompt.json)：失败。模型修正了 `source_ids` 参数后，仍未按品牌检查结果将“支持字幕”及 P01 来源写入分镜，重复检查至调用上限。
 - [`real_qwen2_qa_conflict_guarded.json`](../examples/outputs/real_qwen2_qa_conflict_guarded.json)：加入未读文档清单和重复读取保护后的失败记录。模型仍未形成通过校验的冲突答案。
 - [`real_qwen2_video_normal_guarded.json`](../examples/outputs/real_qwen2_video_normal_guarded.json)：加入明确的逐字修正建议和重复检查保护后的失败记录。模型仍未将“支持字幕”及 P01 写入分镜。
+- [`real_llama3_video_normal.json`](../examples/outputs/real_llama3_video_normal.json)：使用本机另一款 Llama 3.2 模型复核，首轮检索成功后返回无效 JSON，被执行器安全终止。
 
 较早失败轨迹也保留在同目录中，可对照提示和错误反馈改进前后的行为。真实模型实测证明两条排期轨迹能根据工具观察调整；另外三题的试跑明确未通过，故不能声称四题均已满足真实模型动态决策要求，也不能把局部成功外推为可靠成功率。测试和实测均使用合成业务资料。
 

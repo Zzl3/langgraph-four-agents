@@ -1,0 +1,45 @@
+{
+  "task": "video",
+  "model": "real",
+  "result": {
+    "status": "incomplete",
+    "reason": "决策器失败: JSONDecodeError: Unterminated string starting at: line 1 column 42 (char 41)",
+    "source_ids": []
+  },
+  "trace": [
+    {
+      "step": 1,
+      "action": "search_product",
+      "args": {
+        "query": "字幕"
+      },
+      "reason": "",
+      "observation": {
+        "ok": true,
+        "materials": [
+          {
+            "id": "P01",
+            "keywords": [
+              "字幕",
+              "视频",
+              "剪辑"
+            ],
+            "fact": "支持字幕"
+          }
+        ]
+      },
+      "decision_source": "real"
+    }
+  ],
+  "final_decision": {
+    "action": "finish",
+    "reason": "决策器失败: JSONDecodeError: Unterminated string starting at: line 1 column 42 (char 41)"
+  },
+  "evaluation": {
+    "provider": "local Ollama",
+    "model": "llama3.2:latest",
+    "parameters": "3.2B Q4_K_M",
+    "note": "失败：只完成首次产品检索，后续输出不是有效 JSON，执行器安全返回 incomplete。",
+    "input_file": "examples/inputs/video_normal.json"
+  }
+}
