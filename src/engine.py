@@ -6,6 +6,8 @@ import time
 from typing import Any, TypedDict
 from langgraph.graph import StateGraph, START, END
 
+TASKS = ('schedule','plan','qa','video')
+
 class State(TypedDict, total=False):
     request: dict
     task: str
@@ -280,21 +282,45 @@ def checkpoint_failure(state: State) -> dict:
     return {'result':result}
 
 
-def build_graph():
+def build_graph(task: str):
+    """Compile one task-bound LangGraph agent from the shared execution skeleton."""
+    if task not in TASKS:
+        raise ValueError(f'未知任务图: {task}')
+
+    def bind(node):
+        def invoke(state):
+            if state.get('task') != task:
+                raise ValueError(f'{task} 图不能执行 task={state.get("task")}')
+            return node(state)
+        return invoke
+
+    prefix = task
     g = StateGraph(State)
-    g.add_node('decide', decide)
-    g.add_node('execute', execute)
-    g.add_node('limit', limit)
-    g.add_node('checkpoint_failure', checkpoint_failure)
-    g.add_edge(START, 'decide')
-    g.add_edge('decide', 'execute')
-    g.add_conditional_edges('execute', route, {'decide':'decide','limit':'limit','checkpoint_failure':'checkpoint_failure','end':END})
-    g.add_edge('limit', END)
-    g.add_edge('checkpoint_failure', END)
+    names = {name:f'{prefix}_{name}' for name in ('decide','execute','limit','checkpoint_failure')}
+    g.add_node(names['decide'], bind(decide))
+    g.add_node(names['execute'], bind(execute))
+    g.add_node(names['limit'], bind(limit))
+    g.add_node(names['checkpoint_failure'], bind(checkpoint_failure))
+    g.add_edge(START, names['decide'])
+    g.add_edge(names['decide'], names['execute'])
+
+    def task_route(state):
+        if state.get('task') != task:
+            raise ValueError(f'{task} 图不能路由 task={state.get("task")}')
+        destination = route(state)
+        return END if destination == 'end' else names[destination]
+
+    g.add_conditional_edges(names['execute'], task_route,
+                            {END:END, names['decide']:names['decide'], names['limit']:names['limit'],
+                             names['checkpoint_failure']:names['checkpoint_failure']})
+    g.add_edge(names['limit'], END)
+    g.add_edge(names['checkpoint_failure'], END)
     return g.compile()
 
 
 def run(task: str, request: dict, model='mock', max_calls=20, runtime='runtime', run_id=None, resume=False, trace_file=None) -> dict:
+    if task not in TASKS:
+        raise ValueError(f'task 必须是 {", ".join(TASKS)} 之一')
     if max_calls < 1:
         raise ValueError('max_calls 必须大于零')
     request = dict(request)
@@ -339,7 +365,7 @@ def run(task: str, request: dict, model='mock', max_calls=20, runtime='runtime',
                 try: append_trace(trace_file,{'event':'finish','result':output['result'],'final_decision':output['final_decision']})
                 except (OSError,ValueError,TypeError) as e: output['trace_error']=f'轨迹写入失败: {type(e).__name__}: {e}'
             return output
-        state = build_graph().invoke(initial,
+        state = build_graph(task).invoke(initial,
                                     config={'recursion_limit': max_calls * 3 + 5})
         final = state.get('decision', {})
         rejected = state.get('result',{}).get('code') in ('invalid_result','unverified_result')

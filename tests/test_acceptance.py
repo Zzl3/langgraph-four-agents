@@ -2,6 +2,22 @@ import sqlite3
 from src.engine import run
 
 
+def test_each_task_has_its_own_task_bound_langgraph():
+    from src.engine import TASKS, build_graph
+    graphs={task:build_graph(task) for task in TASKS}
+    for task,graph in graphs.items():
+        nodes=set(graph.get_graph().nodes)
+        assert f'{task}_decide' in nodes
+        assert f'{task}_execute' in nodes
+        assert f'{task}_limit' in nodes
+    assert len({id(graph) for graph in graphs.values()})==4
+    import pytest
+    with pytest.raises(ValueError,match='不能执行'):
+        graphs['schedule'].invoke({'task':'plan'})
+    with pytest.raises(ValueError,match='未知任务'):
+        build_graph('unknown')
+
+
 def test_schedule(tmp_path):
     req={'material_id':'M01','date':'2026-11-01','time':'18:00'}
     a=run('schedule',req,runtime=str(tmp_path)); b=run('schedule',req,runtime=str(tmp_path))
