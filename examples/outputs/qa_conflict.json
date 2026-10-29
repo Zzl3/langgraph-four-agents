@@ -1,0 +1,89 @@
+{
+  "task": "qa",
+  "model": "mock",
+  "result": {
+    "status": "conflict",
+    "answer": "资料存在不同表述，适用范围与优先级未明确，请确认适用制度。",
+    "citations": [
+      {
+        "id": "D01",
+        "date": "2025-01-01",
+        "excerpt": "报销期限为30天。"
+      },
+      {
+        "id": "D02",
+        "date": "2025-02-01",
+        "excerpt": "报销期限为15天。"
+      }
+    ],
+    "gaps": [
+      "适用范围或优先级"
+    ]
+  },
+  "trace": [
+    {
+      "step": 1,
+      "action": "search_docs",
+      "args": {
+        "query": "报销期限多久"
+      },
+      "reason": "结合问题及历史检索",
+      "observation": {
+        "ok": true,
+        "matches": [
+          {
+            "id": "D01",
+            "date": "2025-01-01",
+            "title": "费用报销制度"
+          },
+          {
+            "id": "D02",
+            "date": "2025-02-01",
+            "title": "报销制度补充"
+          }
+        ]
+      },
+      "decision_source": "mock"
+    },
+    {
+      "step": 2,
+      "action": "read_doc",
+      "args": {
+        "id": "D01"
+      },
+      "reason": "读取原文，核对证据与潜在冲突",
+      "observation": {
+        "ok": true,
+        "document": {
+          "id": "D01",
+          "date": "2025-01-01",
+          "title": "费用报销制度",
+          "text": "报销期限为30天。"
+        }
+      },
+      "decision_source": "mock"
+    },
+    {
+      "step": 3,
+      "action": "read_doc",
+      "args": {
+        "id": "D02"
+      },
+      "reason": "读取原文，核对证据与潜在冲突",
+      "observation": {
+        "ok": true,
+        "document": {
+          "id": "D02",
+          "date": "2025-02-01",
+          "title": "报销制度补充",
+          "text": "报销期限为15天。"
+        }
+      },
+      "decision_source": "mock"
+    }
+  ],
+  "final_decision": {
+    "action": "finish",
+    "reason": "资料存在冲突，需要确认适用范围"
+  }
+}

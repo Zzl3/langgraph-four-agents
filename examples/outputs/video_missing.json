@@ -1,0 +1,20 @@
+{
+  "task": "video",
+  "model": "mock",
+  "result": {
+    "status": "incomplete",
+    "reason": "缺少关键信息",
+    "missing": [
+      "audience",
+      "platform",
+      "duration",
+      "style"
+    ],
+    "source_ids": []
+  },
+  "trace": [],
+  "final_decision": {
+    "action": "finish",
+    "reason": "缺少关键信息"
+  }
+}

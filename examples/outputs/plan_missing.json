@@ -1,0 +1,23 @@
+{
+  "task": "plan",
+  "model": "mock",
+  "result": {
+    "status": "incomplete",
+    "saved": false,
+    "step_status": {
+      "search_material": "not_started",
+      "generate_script": "not_started",
+      "estimate_cost": "not_started",
+      "save_plan": "not_started"
+    },
+    "completed_steps": [],
+    "step_results": [],
+    "estimate_attempts": [],
+    "reason": "缺少主题、预算或截止时间"
+  },
+  "trace": [],
+  "final_decision": {
+    "action": "finish",
+    "reason": "缺少主题、预算或截止时间"
+  }
+}

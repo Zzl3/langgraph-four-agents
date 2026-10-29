@@ -1,0 +1,28 @@
+{
+  "task": "video",
+  "model": "mock",
+  "result": {
+    "status": "insufficient",
+    "reason": "无可用素材，请补充产品事实",
+    "source_ids": []
+  },
+  "trace": [
+    {
+      "step": 1,
+      "action": "search_product",
+      "args": {
+        "query": "不存在"
+      },
+      "reason": "根据主题检索素材",
+      "observation": {
+        "ok": true,
+        "materials": []
+      },
+      "decision_source": "mock"
+    }
+  ],
+  "final_decision": {
+    "action": "finish",
+    "reason": "资料不足，需要补充"
+  }
+}

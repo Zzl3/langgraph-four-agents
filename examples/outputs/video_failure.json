@@ -1,0 +1,70 @@
+{
+  "task": "video",
+  "model": "mock",
+  "result": {
+    "status": "incomplete",
+    "reason": "estimate_duration 失败: 模拟工具失败: estimate_duration",
+    "source_ids": []
+  },
+  "trace": [
+    {
+      "step": 1,
+      "action": "search_product",
+      "args": {
+        "query": "字幕"
+      },
+      "reason": "根据主题检索素材",
+      "observation": {
+        "ok": true,
+        "materials": [
+          {
+            "id": "P01",
+            "keywords": [
+              "字幕",
+              "视频",
+              "剪辑"
+            ],
+            "fact": "支持字幕"
+          }
+        ]
+      },
+      "decision_source": "mock"
+    },
+    {
+      "step": 2,
+      "action": "estimate_duration",
+      "args": {
+        "scenes": [
+          {
+            "seconds": 5,
+            "visual": "纯色背景",
+            "narration": "创作者，一起看看这项功能。",
+            "source_id": null
+          },
+          {
+            "seconds": 27,
+            "visual": "竖屏文字卡片",
+            "narration": "支持字幕",
+            "source_id": "P01"
+          },
+          {
+            "seconds": 6,
+            "visual": "纯色背景",
+            "narration": "你会怎么使用？",
+            "source_id": null
+          }
+        ]
+      },
+      "reason": "估算首稿",
+      "observation": {
+        "ok": false,
+        "error": "模拟工具失败: estimate_duration"
+      },
+      "decision_source": "mock"
+    }
+  ],
+  "final_decision": {
+    "action": "finish",
+    "reason": "estimate_duration 失败: 模拟工具失败: estimate_duration"
+  }
+}

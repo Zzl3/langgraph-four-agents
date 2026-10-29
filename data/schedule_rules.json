@@ -1,0 +1,4 @@
+{
+  "required_fields": ["id", "title", "content"],
+  "blocked_terms": ["绝对有效"]
+}

@@ -1,0 +1,309 @@
+{
+  "task": "plan",
+  "model": "mock",
+  "result": {
+    "status": "completed",
+    "saved": true,
+    "step_status": {
+      "search_material": "completed",
+      "generate_script": "completed",
+      "estimate_cost": "completed",
+      "save_plan": "completed"
+    },
+    "completed_steps": [
+      "search_material",
+      "generate_script",
+      "estimate_cost",
+      "save_plan"
+    ],
+    "step_results": [
+      {
+        "step": 1,
+        "action": "search_material",
+        "args": {
+          "query": "字幕"
+        },
+        "reason": "检索活动素材",
+        "observation": {
+          "ok": true,
+          "materials": [
+            {
+              "id": "A",
+              "description": "字幕功能",
+              "keywords": [
+                "字幕"
+              ]
+            }
+          ],
+          "available_options": [
+            "only"
+          ]
+        },
+        "decision_source": "mock"
+      },
+      {
+        "step": 2,
+        "action": "generate_script",
+        "args": {
+          "material_id": "A",
+          "option": "only"
+        },
+        "reason": "生成脚本并保留结果",
+        "observation": {
+          "ok": true,
+          "material_id": "A",
+          "script": "围绕字幕介绍字幕功能"
+        },
+        "decision_source": "mock"
+      },
+      {
+        "step": 3,
+        "action": "estimate_cost",
+        "args": {
+          "option": "only"
+        },
+        "reason": "估算初始方案",
+        "observation": {
+          "ok": true,
+          "option": "only",
+          "cost": 0.3,
+          "hours": 0.3,
+          "steps": [
+            {
+              "name": "脚本",
+              "cost": 0.1,
+              "hours": 0.1
+            },
+            {
+              "name": "剪辑",
+              "cost": 0.2,
+              "hours": 0.2
+            }
+          ]
+        },
+        "decision_source": "mock"
+      },
+      {
+        "step": 4,
+        "action": "save_plan",
+        "args": {
+          "plan": {
+            "theme": "字幕",
+            "material_id": "A",
+            "option": "only",
+            "budget": 0.3,
+            "deadline_hours": 0.31,
+            "cost": 0.3,
+            "hours": 0.3,
+            "steps": [
+              {
+                "name": "脚本",
+                "cost": 0.1,
+                "hours": 0.1
+              },
+              {
+                "name": "剪辑",
+                "cost": 0.2,
+                "hours": 0.2
+              }
+            ],
+            "task_step_status": [
+              {
+                "name": "脚本",
+                "status": "planned"
+              },
+              {
+                "name": "剪辑",
+                "status": "planned"
+              }
+            ],
+            "script": "围绕字幕介绍字幕功能"
+          }
+        },
+        "reason": "满足预算和期限，保存方案",
+        "observation": {
+          "ok": true,
+          "saved": true,
+          "duplicate": false,
+          "key": "ca2fd7e9e5e1c3b297c4f19e0788c228c8d77ceb42b68fd7ba5bf7d68b74a96f"
+        },
+        "decision_source": "mock"
+      }
+    ],
+    "estimate_attempts": [
+      {
+        "option": "only",
+        "status": "completed",
+        "result": {
+          "ok": true,
+          "option": "only",
+          "cost": 0.3,
+          "hours": 0.3,
+          "steps": [
+            {
+              "name": "脚本",
+              "cost": 0.1,
+              "hours": 0.1
+            },
+            {
+              "name": "剪辑",
+              "cost": 0.2,
+              "hours": 0.2
+            }
+          ]
+        }
+      }
+    ],
+    "plan": {
+      "theme": "字幕",
+      "material_id": "A",
+      "option": "only",
+      "budget": 0.3,
+      "deadline_hours": 0.31,
+      "cost": 0.3,
+      "hours": 0.3,
+      "steps": [
+        {
+          "name": "脚本",
+          "cost": 0.1,
+          "hours": 0.1
+        },
+        {
+          "name": "剪辑",
+          "cost": 0.2,
+          "hours": 0.2
+        }
+      ],
+      "task_step_status": [
+        {
+          "name": "脚本",
+          "status": "planned"
+        },
+        {
+          "name": "剪辑",
+          "status": "planned"
+        }
+      ],
+      "script": "围绕字幕介绍字幕功能"
+    },
+    "duplicate": false
+  },
+  "trace": [
+    {
+      "step": 1,
+      "action": "search_material",
+      "args": {
+        "query": "字幕"
+      },
+      "reason": "检索活动素材",
+      "observation": {
+        "ok": true,
+        "materials": [
+          {
+            "id": "A",
+            "description": "字幕功能",
+            "keywords": [
+              "字幕"
+            ]
+          }
+        ],
+        "available_options": [
+          "only"
+        ]
+      },
+      "decision_source": "mock"
+    },
+    {
+      "step": 2,
+      "action": "generate_script",
+      "args": {
+        "material_id": "A",
+        "option": "only"
+      },
+      "reason": "生成脚本并保留结果",
+      "observation": {
+        "ok": true,
+        "material_id": "A",
+        "script": "围绕字幕介绍字幕功能"
+      },
+      "decision_source": "mock"
+    },
+    {
+      "step": 3,
+      "action": "estimate_cost",
+      "args": {
+        "option": "only"
+      },
+      "reason": "估算初始方案",
+      "observation": {
+        "ok": true,
+        "option": "only",
+        "cost": 0.3,
+        "hours": 0.3,
+        "steps": [
+          {
+            "name": "脚本",
+            "cost": 0.1,
+            "hours": 0.1
+          },
+          {
+            "name": "剪辑",
+            "cost": 0.2,
+            "hours": 0.2
+          }
+        ]
+      },
+      "decision_source": "mock"
+    },
+    {
+      "step": 4,
+      "action": "save_plan",
+      "args": {
+        "plan": {
+          "theme": "字幕",
+          "material_id": "A",
+          "option": "only",
+          "budget": 0.3,
+          "deadline_hours": 0.31,
+          "cost": 0.3,
+          "hours": 0.3,
+          "steps": [
+            {
+              "name": "脚本",
+              "cost": 0.1,
+              "hours": 0.1
+            },
+            {
+              "name": "剪辑",
+              "cost": 0.2,
+              "hours": 0.2
+            }
+          ],
+          "task_step_status": [
+            {
+              "name": "脚本",
+              "status": "planned"
+            },
+            {
+              "name": "剪辑",
+              "status": "planned"
+            }
+          ],
+          "script": "围绕字幕介绍字幕功能"
+        }
+      },
+      "reason": "满足预算和期限，保存方案",
+      "observation": {
+        "ok": true,
+        "saved": true,
+        "duplicate": false,
+        "key": "ca2fd7e9e5e1c3b297c4f19e0788c228c8d77ceb42b68fd7ba5bf7d68b74a96f"
+      },
+      "decision_source": "mock"
+    }
+  ],
+  "final_decision": {
+    "action": "finish",
+    "reason": "依据工具结果完成当前任务"
+  }
+}

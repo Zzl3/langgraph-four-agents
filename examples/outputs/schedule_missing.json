@@ -1,0 +1,70 @@
+{
+  "task": "schedule",
+  "model": "mock",
+  "result": {
+    "status": "incomplete",
+    "items": [
+      {
+        "id": "M02",
+        "date": "2026-11-01",
+        "requested_time": "18:00",
+        "review_status": "incomplete",
+        "risk_reasons": [],
+        "missing": [
+          "content"
+        ],
+        "saved": false,
+        "suggested_time": null,
+        "confirmation": null
+      }
+    ],
+    "saved": false,
+    "published": false,
+    "reason": "素材审核未通过或资料不完整",
+    "suggested_time": null,
+    "confirmation": null,
+    "duplicate": null
+  },
+  "trace": [
+    {
+      "step": 1,
+      "action": "read_material",
+      "args": {
+        "id": "M02"
+      },
+      "reason": "读取该素材",
+      "observation": {
+        "ok": true,
+        "material": {
+          "id": "M02",
+          "title": "信息不完整"
+        }
+      },
+      "decision_source": "mock"
+    },
+    {
+      "step": 2,
+      "action": "check_rules",
+      "args": {
+        "material": {
+          "id": "M02",
+          "title": "信息不完整"
+        }
+      },
+      "reason": "依据已读取素材检查缺失和风险",
+      "observation": {
+        "ok": true,
+        "missing": [
+          "content"
+        ],
+        "risks": [],
+        "status": "incomplete"
+      },
+      "decision_source": "mock"
+    }
+  ],
+  "final_decision": {
+    "action": "finish",
+    "reason": "素材审核未通过或资料不完整"
+  }
+}

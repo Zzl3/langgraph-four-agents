@@ -1,0 +1,114 @@
+{
+  "task": "schedule",
+  "model": "mock",
+  "result": {
+    "status": "ready",
+    "items": [
+      {
+        "id": "M99",
+        "date": "2026-11-01",
+        "requested_time": "20:00",
+        "review_status": "approved",
+        "risk_reasons": [],
+        "missing": [],
+        "saved": true,
+        "suggested_time": "20:00",
+        "confirmation": null,
+        "duplicate": false
+      }
+    ],
+    "saved": true,
+    "published": false,
+    "suggested_time": "20:00",
+    "confirmation": null,
+    "duplicate": false
+  },
+  "trace": [
+    {
+      "step": 1,
+      "action": "read_material",
+      "args": {
+        "id": "M99"
+      },
+      "reason": "读取该素材",
+      "observation": {
+        "ok": true,
+        "material": {
+          "id": "M99",
+          "title": "自定义素材",
+          "content": "普通说明"
+        }
+      },
+      "decision_source": "mock"
+    },
+    {
+      "step": 2,
+      "action": "check_rules",
+      "args": {
+        "material": {
+          "id": "M99",
+          "title": "自定义素材",
+          "content": "普通说明"
+        }
+      },
+      "reason": "依据已读取素材检查缺失和风险",
+      "observation": {
+        "ok": true,
+        "missing": [],
+        "risks": [],
+        "status": "approved"
+      },
+      "decision_source": "mock"
+    },
+    {
+      "step": 3,
+      "action": "query_slots",
+      "args": {
+        "date": "2026-11-01",
+        "material_id": "M99"
+      },
+      "reason": "查询该素材所在日期的排期冲突",
+      "observation": {
+        "ok": true,
+        "occupied": [
+          "18:00"
+        ],
+        "local_draft_slots": [],
+        "available": [
+          "19:00",
+          "20:00"
+        ]
+      },
+      "decision_source": "mock"
+    },
+    {
+      "step": 4,
+      "action": "save_draft",
+      "args": {
+        "draft": {
+          "material_ids": [
+            "M99"
+          ],
+          "date": "2026-11-01",
+          "requested_time": "20:00",
+          "suggested_time": "20:00",
+          "status": "ready",
+          "confirmation": null,
+          "published": false
+        }
+      },
+      "reason": "保存未发布草稿；替代时段需要确认",
+      "observation": {
+        "ok": true,
+        "saved": true,
+        "duplicate": false,
+        "key": "f1f09fb169aa9eebec25ca7733981aa548e5cb1f3d7caf1be366029a56bec6ea"
+      },
+      "decision_source": "mock"
+    }
+  ],
+  "final_decision": {
+    "action": "finish",
+    "reason": "审核和草稿保存完成，尚未发布"
+  }
+}

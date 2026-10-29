@@ -1,0 +1,331 @@
+{
+  "task": "plan",
+  "model": "mock",
+  "result": {
+    "status": "completed",
+    "saved": true,
+    "step_status": {
+      "search_material": "completed",
+      "generate_script": "completed",
+      "estimate_cost": "completed",
+      "save_plan": "completed"
+    },
+    "completed_steps": [
+      "search_material",
+      "generate_script",
+      "estimate_cost",
+      "estimate_cost",
+      "save_plan"
+    ],
+    "step_results": [
+      {
+        "step": 1,
+        "action": "search_material",
+        "args": {
+          "query": "美食活动"
+        },
+        "reason": "检索活动素材",
+        "observation": {
+          "ok": true,
+          "materials": [
+            {
+              "id": "FOOD",
+              "description": "家常菜素材",
+              "keywords": [
+                "美食"
+              ]
+            }
+          ],
+          "available_options": [
+            "premium",
+            "basic"
+          ]
+        },
+        "decision_source": "mock"
+      },
+      {
+        "step": 2,
+        "action": "generate_script",
+        "args": {
+          "material_id": "FOOD",
+          "option": "premium"
+        },
+        "reason": "生成脚本并保留结果",
+        "observation": {
+          "ok": true,
+          "material_id": "FOOD",
+          "script": "围绕美食活动介绍家常菜素材"
+        },
+        "decision_source": "mock"
+      },
+      {
+        "step": 3,
+        "action": "estimate_cost",
+        "args": {
+          "option": "premium"
+        },
+        "reason": "估算初始方案",
+        "observation": {
+          "ok": true,
+          "option": "premium",
+          "cost": 12,
+          "hours": 2,
+          "steps": [
+            {
+              "name": "拍摄",
+              "cost": 12,
+              "hours": 2
+            }
+          ]
+        },
+        "decision_source": "mock"
+      },
+      {
+        "step": 4,
+        "action": "estimate_cost",
+        "args": {
+          "option": "basic"
+        },
+        "reason": "前一方案超出限制，估算替代方案",
+        "observation": {
+          "ok": true,
+          "option": "basic",
+          "cost": 8,
+          "hours": 2,
+          "steps": [
+            {
+              "name": "剪辑",
+              "cost": 8,
+              "hours": 2
+            }
+          ]
+        },
+        "decision_source": "mock"
+      },
+      {
+        "step": 5,
+        "action": "save_plan",
+        "args": {
+          "plan": {
+            "theme": "美食活动",
+            "material_id": "FOOD",
+            "option": "basic",
+            "budget": 10,
+            "deadline_hours": 4,
+            "cost": 8,
+            "hours": 2,
+            "steps": [
+              {
+                "name": "剪辑",
+                "cost": 8,
+                "hours": 2
+              }
+            ],
+            "task_step_status": [
+              {
+                "name": "剪辑",
+                "status": "planned"
+              }
+            ],
+            "script": "围绕美食活动介绍家常菜素材"
+          }
+        },
+        "reason": "满足预算和期限，保存方案",
+        "observation": {
+          "ok": true,
+          "saved": true,
+          "duplicate": false,
+          "key": "4a17650a1cb665b460e0ae728163b25f93e58ebcb9075c58559d504b488bcfdb"
+        },
+        "decision_source": "mock"
+      }
+    ],
+    "estimate_attempts": [
+      {
+        "option": "premium",
+        "status": "completed",
+        "result": {
+          "ok": true,
+          "option": "premium",
+          "cost": 12,
+          "hours": 2,
+          "steps": [
+            {
+              "name": "拍摄",
+              "cost": 12,
+              "hours": 2
+            }
+          ]
+        }
+      },
+      {
+        "option": "basic",
+        "status": "completed",
+        "result": {
+          "ok": true,
+          "option": "basic",
+          "cost": 8,
+          "hours": 2,
+          "steps": [
+            {
+              "name": "剪辑",
+              "cost": 8,
+              "hours": 2
+            }
+          ]
+        }
+      }
+    ],
+    "plan": {
+      "theme": "美食活动",
+      "material_id": "FOOD",
+      "option": "basic",
+      "budget": 10,
+      "deadline_hours": 4,
+      "cost": 8,
+      "hours": 2,
+      "steps": [
+        {
+          "name": "剪辑",
+          "cost": 8,
+          "hours": 2
+        }
+      ],
+      "task_step_status": [
+        {
+          "name": "剪辑",
+          "status": "planned"
+        }
+      ],
+      "script": "围绕美食活动介绍家常菜素材"
+    },
+    "duplicate": false
+  },
+  "trace": [
+    {
+      "step": 1,
+      "action": "search_material",
+      "args": {
+        "query": "美食活动"
+      },
+      "reason": "检索活动素材",
+      "observation": {
+        "ok": true,
+        "materials": [
+          {
+            "id": "FOOD",
+            "description": "家常菜素材",
+            "keywords": [
+              "美食"
+            ]
+          }
+        ],
+        "available_options": [
+          "premium",
+          "basic"
+        ]
+      },
+      "decision_source": "mock"
+    },
+    {
+      "step": 2,
+      "action": "generate_script",
+      "args": {
+        "material_id": "FOOD",
+        "option": "premium"
+      },
+      "reason": "生成脚本并保留结果",
+      "observation": {
+        "ok": true,
+        "material_id": "FOOD",
+        "script": "围绕美食活动介绍家常菜素材"
+      },
+      "decision_source": "mock"
+    },
+    {
+      "step": 3,
+      "action": "estimate_cost",
+      "args": {
+        "option": "premium"
+      },
+      "reason": "估算初始方案",
+      "observation": {
+        "ok": true,
+        "option": "premium",
+        "cost": 12,
+        "hours": 2,
+        "steps": [
+          {
+            "name": "拍摄",
+            "cost": 12,
+            "hours": 2
+          }
+        ]
+      },
+      "decision_source": "mock"
+    },
+    {
+      "step": 4,
+      "action": "estimate_cost",
+      "args": {
+        "option": "basic"
+      },
+      "reason": "前一方案超出限制，估算替代方案",
+      "observation": {
+        "ok": true,
+        "option": "basic",
+        "cost": 8,
+        "hours": 2,
+        "steps": [
+          {
+            "name": "剪辑",
+            "cost": 8,
+            "hours": 2
+          }
+        ]
+      },
+      "decision_source": "mock"
+    },
+    {
+      "step": 5,
+      "action": "save_plan",
+      "args": {
+        "plan": {
+          "theme": "美食活动",
+          "material_id": "FOOD",
+          "option": "basic",
+          "budget": 10,
+          "deadline_hours": 4,
+          "cost": 8,
+          "hours": 2,
+          "steps": [
+            {
+              "name": "剪辑",
+              "cost": 8,
+              "hours": 2
+            }
+          ],
+          "task_step_status": [
+            {
+              "name": "剪辑",
+              "status": "planned"
+            }
+          ],
+          "script": "围绕美食活动介绍家常菜素材"
+        }
+      },
+      "reason": "满足预算和期限，保存方案",
+      "observation": {
+        "ok": true,
+        "saved": true,
+        "duplicate": false,
+        "key": "4a17650a1cb665b460e0ae728163b25f93e58ebcb9075c58559d504b488bcfdb"
+      },
+      "decision_source": "mock"
+    }
+  ],
+  "final_decision": {
+    "action": "finish",
+    "reason": "依据工具结果完成当前任务"
+  }
+}

@@ -1,0 +1,31 @@
+{
+  "task": "qa",
+  "model": "mock",
+  "result": {
+    "status": "insufficient",
+    "answer": "现有资料不足以回答该问题，请补充资料或明确适用范围。",
+    "citations": [],
+    "gaps": [
+      "缺少能回答“公司地址在哪里”的完整资料"
+    ]
+  },
+  "trace": [
+    {
+      "step": 1,
+      "action": "search_docs",
+      "args": {
+        "query": "公司地址在哪里"
+      },
+      "reason": "结合问题及历史检索",
+      "observation": {
+        "ok": true,
+        "matches": []
+      },
+      "decision_source": "mock"
+    }
+  ],
+  "final_decision": {
+    "action": "finish",
+    "reason": "资料不足，需要补充"
+  }
+}

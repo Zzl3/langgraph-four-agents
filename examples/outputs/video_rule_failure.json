@@ -1,0 +1,158 @@
+{
+  "task": "video",
+  "model": "mock",
+  "result": {
+    "status": "incomplete",
+    "reason": "品牌规则检查未通过",
+    "risks": [
+      "包含未经证实或禁止的宣传"
+    ],
+    "seconds": 28.0,
+    "source_ids": [
+      "P01"
+    ]
+  },
+  "trace": [
+    {
+      "step": 1,
+      "action": "search_product",
+      "args": {
+        "query": "字幕"
+      },
+      "reason": "根据主题检索素材",
+      "observation": {
+        "ok": true,
+        "materials": [
+          {
+            "id": "P01",
+            "keywords": [
+              "字幕",
+              "视频",
+              "剪辑"
+            ],
+            "fact": "支持字幕"
+          }
+        ]
+      },
+      "decision_source": "mock"
+    },
+    {
+      "step": 2,
+      "action": "estimate_duration",
+      "args": {
+        "scenes": [
+          {
+            "seconds": 5,
+            "visual": "纯色背景",
+            "narration": "创作者，一起看看这项功能。",
+            "source_id": null
+          },
+          {
+            "seconds": 27,
+            "visual": "竖屏文字卡片",
+            "narration": "支持字幕",
+            "source_id": "P01"
+          },
+          {
+            "seconds": 6,
+            "visual": "纯色背景",
+            "narration": "你会怎么使用？",
+            "source_id": null
+          }
+        ]
+      },
+      "reason": "估算首稿",
+      "observation": {
+        "ok": true,
+        "seconds": 38.0,
+        "scene_seconds": [
+          5.0,
+          27.0,
+          6.0
+        ],
+        "method": "每秒最多4个非空白字符；分镜时长取设定值与旁白估算值的较大者"
+      },
+      "decision_source": "mock"
+    },
+    {
+      "step": 3,
+      "action": "estimate_duration",
+      "args": {
+        "scenes": [
+          {
+            "seconds": 4,
+            "visual": "纯色背景",
+            "narration": "创作者，一起看看这项功能。",
+            "source_id": null
+          },
+          {
+            "seconds": 20,
+            "visual": "竖屏文字卡片",
+            "narration": "支持字幕",
+            "source_id": "P01"
+          },
+          {
+            "seconds": 4,
+            "visual": "纯色背景",
+            "narration": "你会怎么使用？",
+            "source_id": null
+          }
+        ]
+      },
+      "reason": "首稿超时，缩短各镜头并重新估算",
+      "observation": {
+        "ok": true,
+        "seconds": 28.0,
+        "scene_seconds": [
+          4.0,
+          20.0,
+          4.0
+        ],
+        "method": "每秒最多4个非空白字符；分镜时长取设定值与旁白估算值的较大者"
+      },
+      "decision_source": "mock"
+    },
+    {
+      "step": 4,
+      "action": "check_brand",
+      "args": {
+        "scenes": [
+          {
+            "seconds": 4,
+            "visual": "纯色背景",
+            "narration": "创作者，一起看看这项功能。",
+            "source_id": null
+          },
+          {
+            "seconds": 20,
+            "visual": "竖屏文字卡片",
+            "narration": "支持字幕",
+            "source_id": "P01"
+          },
+          {
+            "seconds": 4,
+            "visual": "纯色背景",
+            "narration": "你会怎么使用？",
+            "source_id": null
+          }
+        ],
+        "source_ids": [
+          "P01"
+        ]
+      },
+      "reason": "检查品牌规则和素材来源",
+      "observation": {
+        "ok": true,
+        "passed": false,
+        "risks": [
+          "包含未经证实或禁止的宣传"
+        ]
+      },
+      "decision_source": "mock"
+    }
+  ],
+  "final_decision": {
+    "action": "finish",
+    "reason": "品牌规则检查未通过"
+  }
+}

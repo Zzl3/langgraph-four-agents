@@ -1,0 +1,72 @@
+{
+  "task": "schedule",
+  "model": "mock",
+  "result": {
+    "status": "incomplete",
+    "items": [
+      {
+        "id": "M03",
+        "date": "2026-11-01",
+        "requested_time": "18:00",
+        "review_status": "blocked",
+        "risk_reasons": [
+          "包含违规宣传词：绝对有效"
+        ],
+        "missing": [],
+        "saved": false,
+        "suggested_time": null,
+        "confirmation": null
+      }
+    ],
+    "saved": false,
+    "published": false,
+    "reason": "素材审核未通过或资料不完整",
+    "suggested_time": null,
+    "confirmation": null,
+    "duplicate": null
+  },
+  "trace": [
+    {
+      "step": 1,
+      "action": "read_material",
+      "args": {
+        "id": "M03"
+      },
+      "reason": "读取该素材",
+      "observation": {
+        "ok": true,
+        "material": {
+          "id": "M03",
+          "title": "高风险",
+          "content": "绝对有效"
+        }
+      },
+      "decision_source": "mock"
+    },
+    {
+      "step": 2,
+      "action": "check_rules",
+      "args": {
+        "material": {
+          "id": "M03",
+          "title": "高风险",
+          "content": "绝对有效"
+        }
+      },
+      "reason": "依据已读取素材检查缺失和风险",
+      "observation": {
+        "ok": true,
+        "missing": [],
+        "risks": [
+          "包含违规宣传词：绝对有效"
+        ],
+        "status": "blocked"
+      },
+      "decision_source": "mock"
+    }
+  ],
+  "final_decision": {
+    "action": "finish",
+    "reason": "素材审核未通过或资料不完整"
+  }
+}

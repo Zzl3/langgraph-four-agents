@@ -1,0 +1,292 @@
+{
+  "service_kind": "local_http_simulator",
+  "notice": "决策由离线规则产生，真实 SDK HTTP 通信；不是大模型决策效果证据。",
+  "request": {
+    "material_id": "M01",
+    "date": "2026-11-01",
+    "time": "18:00"
+  },
+  "rounds": [
+    {
+      "remaining_calls": 20,
+      "last_observation": null,
+      "decision": {
+        "action": "read_material",
+        "args": {
+          "id": "M01"
+        },
+        "reason": "读取该素材"
+      }
+    },
+    {
+      "remaining_calls": 19,
+      "last_observation": {
+        "step": 1,
+        "action": "read_material",
+        "args": {
+          "id": "M01"
+        },
+        "reason": "读取该素材",
+        "observation": {
+          "ok": true,
+          "material": {
+            "id": "M01",
+            "title": "字幕功能介绍",
+            "content": "支持字幕"
+          }
+        },
+        "decision_source": "real"
+      },
+      "decision": {
+        "action": "check_rules",
+        "args": {
+          "material": {
+            "id": "M01",
+            "title": "字幕功能介绍",
+            "content": "支持字幕"
+          }
+        },
+        "reason": "依据已读取素材检查缺失和风险"
+      }
+    },
+    {
+      "remaining_calls": 18,
+      "last_observation": {
+        "step": 2,
+        "action": "check_rules",
+        "args": {
+          "material": {
+            "id": "M01",
+            "title": "字幕功能介绍",
+            "content": "支持字幕"
+          }
+        },
+        "reason": "依据已读取素材检查缺失和风险",
+        "observation": {
+          "ok": true,
+          "missing": [],
+          "risks": [],
+          "status": "approved"
+        },
+        "decision_source": "real"
+      },
+      "decision": {
+        "action": "query_slots",
+        "args": {
+          "date": "2026-11-01",
+          "material_id": "M01"
+        },
+        "reason": "查询该素材所在日期的排期冲突"
+      }
+    },
+    {
+      "remaining_calls": 17,
+      "last_observation": {
+        "step": 3,
+        "action": "query_slots",
+        "args": {
+          "date": "2026-11-01",
+          "material_id": "M01"
+        },
+        "reason": "查询该素材所在日期的排期冲突",
+        "observation": {
+          "ok": true,
+          "occupied": [
+            "18:00"
+          ],
+          "local_draft_slots": [],
+          "available": [
+            "19:00",
+            "20:00"
+          ]
+        },
+        "decision_source": "real"
+      },
+      "decision": {
+        "action": "save_draft",
+        "args": {
+          "draft": {
+            "material_ids": [
+              "M01"
+            ],
+            "date": "2026-11-01",
+            "requested_time": "18:00",
+            "suggested_time": "19:00",
+            "status": "pending_confirmation",
+            "confirmation": "原要求 18:00 不可用，建议 19:00，等待用户确认",
+            "published": false
+          }
+        },
+        "reason": "保存未发布草稿；替代时段需要确认"
+      }
+    },
+    {
+      "remaining_calls": 16,
+      "last_observation": {
+        "step": 4,
+        "action": "save_draft",
+        "args": {
+          "draft": {
+            "material_ids": [
+              "M01"
+            ],
+            "date": "2026-11-01",
+            "requested_time": "18:00",
+            "suggested_time": "19:00",
+            "status": "pending_confirmation",
+            "confirmation": "原要求 18:00 不可用，建议 19:00，等待用户确认",
+            "published": false
+          }
+        },
+        "reason": "保存未发布草稿；替代时段需要确认",
+        "observation": {
+          "ok": true,
+          "saved": true,
+          "duplicate": false,
+          "key": "42c4641a9c70042ea67ec0f0014b38ca1792a8127d93455863e570cf0390ea75"
+        },
+        "decision_source": "real"
+      },
+      "decision": {
+        "action": "finish",
+        "result": {
+          "status": "pending_confirmation",
+          "items": [
+            {
+              "id": "M01",
+              "date": "2026-11-01",
+              "requested_time": "18:00",
+              "review_status": "approved",
+              "risk_reasons": [],
+              "missing": [],
+              "saved": true,
+              "suggested_time": "19:00",
+              "confirmation": "原要求 18:00 不可用，建议 19:00，等待用户确认",
+              "duplicate": false
+            }
+          ],
+          "saved": true,
+          "published": false,
+          "suggested_time": "19:00",
+          "confirmation": "原要求 18:00 不可用，建议 19:00，等待用户确认",
+          "duplicate": false
+        },
+        "reason": "已根据工具结果结束"
+      }
+    }
+  ],
+  "output": {
+    "task": "schedule",
+    "model": "real",
+    "result": {
+      "status": "pending_confirmation",
+      "items": [
+        {
+          "id": "M01",
+          "date": "2026-11-01",
+          "requested_time": "18:00",
+          "review_status": "approved",
+          "risk_reasons": [],
+          "missing": [],
+          "saved": true,
+          "suggested_time": "19:00",
+          "confirmation": "原要求 18:00 不可用，建议 19:00，等待用户确认",
+          "duplicate": false
+        }
+      ],
+      "saved": true,
+      "published": false,
+      "suggested_time": "19:00",
+      "confirmation": "原要求 18:00 不可用，建议 19:00，等待用户确认",
+      "duplicate": false
+    },
+    "trace": [
+      {
+        "step": 1,
+        "action": "read_material",
+        "args": {
+          "id": "M01"
+        },
+        "reason": "读取该素材",
+        "observation": {
+          "ok": true,
+          "material": {
+            "id": "M01",
+            "title": "字幕功能介绍",
+            "content": "支持字幕"
+          }
+        },
+        "decision_source": "real"
+      },
+      {
+        "step": 2,
+        "action": "check_rules",
+        "args": {
+          "material": {
+            "id": "M01",
+            "title": "字幕功能介绍",
+            "content": "支持字幕"
+          }
+        },
+        "reason": "依据已读取素材检查缺失和风险",
+        "observation": {
+          "ok": true,
+          "missing": [],
+          "risks": [],
+          "status": "approved"
+        },
+        "decision_source": "real"
+      },
+      {
+        "step": 3,
+        "action": "query_slots",
+        "args": {
+          "date": "2026-11-01",
+          "material_id": "M01"
+        },
+        "reason": "查询该素材所在日期的排期冲突",
+        "observation": {
+          "ok": true,
+          "occupied": [
+            "18:00"
+          ],
+          "local_draft_slots": [],
+          "available": [
+            "19:00",
+            "20:00"
+          ]
+        },
+        "decision_source": "real"
+      },
+      {
+        "step": 4,
+        "action": "save_draft",
+        "args": {
+          "draft": {
+            "material_ids": [
+              "M01"
+            ],
+            "date": "2026-11-01",
+            "requested_time": "18:00",
+            "suggested_time": "19:00",
+            "status": "pending_confirmation",
+            "confirmation": "原要求 18:00 不可用，建议 19:00，等待用户确认",
+            "published": false
+          }
+        },
+        "reason": "保存未发布草稿；替代时段需要确认",
+        "observation": {
+          "ok": true,
+          "saved": true,
+          "duplicate": false,
+          "key": "42c4641a9c70042ea67ec0f0014b38ca1792a8127d93455863e570cf0390ea75"
+        },
+        "decision_source": "real"
+      }
+    ],
+    "final_decision": {
+      "action": "finish",
+      "reason": "替代时段等待用户确认，尚未发布"
+    }
+  }
+}

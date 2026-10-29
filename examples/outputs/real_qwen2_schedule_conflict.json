@@ -1,0 +1,121 @@
+{
+  "task": "schedule",
+  "model": "real",
+  "result": {
+    "status": "pending_confirmation",
+    "items": [
+      {
+        "id": "M01",
+        "date": "2026-11-01",
+        "requested_time": "18:00",
+        "review_status": "approved",
+        "risk_reasons": [],
+        "missing": [],
+        "saved": true,
+        "suggested_time": "19:00",
+        "confirmation": "原要求 18:00 不可用，建议 19:00，等待用户确认",
+        "duplicate": false
+      }
+    ],
+    "saved": true,
+    "published": false,
+    "suggested_time": "19:00",
+    "confirmation": "原要求 18:00 不可用，建议 19:00，等待用户确认",
+    "duplicate": false
+  },
+  "trace": [
+    {
+      "step": 1,
+      "action": "read_material",
+      "args": {
+        "id": "M01"
+      },
+      "reason": "获取素材 M01 的详细信息",
+      "observation": {
+        "ok": true,
+        "material": {
+          "id": "M01",
+          "title": "字幕功能介绍",
+          "content": "支持字幕"
+        }
+      },
+      "decision_source": "real"
+    },
+    {
+      "step": 2,
+      "action": "check_rules",
+      "args": {
+        "material": {
+          "id": "M01",
+          "title": "字幕功能介绍",
+          "content": "支持字幕"
+        }
+      },
+      "reason": "检查素材 M01 是否符合发布规则",
+      "observation": {
+        "ok": true,
+        "missing": [],
+        "risks": [],
+        "status": "approved"
+      },
+      "decision_source": "real"
+    },
+    {
+      "step": 3,
+      "action": "query_slots",
+      "args": {
+        "date": "2026-11-01",
+        "material_id": "M01"
+      },
+      "reason": "查询 2026 年 11 月 1 日的可用时段，为素材 M01 安排时间",
+      "observation": {
+        "ok": true,
+        "occupied": [
+          "18:00"
+        ],
+        "local_draft_slots": [],
+        "available": [
+          "19:00",
+          "20:00"
+        ]
+      },
+      "decision_source": "real"
+    },
+    {
+      "step": 4,
+      "action": "save_draft",
+      "args": {
+        "draft": {
+          "material_ids": [
+            "M01"
+          ],
+          "date": "2026-11-01",
+          "requested_time": "18:00",
+          "suggested_time": "19:00",
+          "status": "pending_confirmation",
+          "confirmation": "原要求 18:00 不可用，建议 19:00，等待用户确认",
+          "published": false
+        }
+      },
+      "reason": "为素材 M01 安排时间在 2026 年 11 月 1 日的 19:00",
+      "observation": {
+        "ok": true,
+        "saved": true,
+        "duplicate": false,
+        "key": "42c4641a9c70042ea67ec0f0014b38ca1792a8127d93455863e570cf0390ea75"
+      },
+      "decision_source": "real"
+    }
+  ],
+  "final_decision": {
+    "action": "finish",
+    "reason": "替代时段等待用户确认，尚未发布"
+  },
+  "evaluation": {
+    "provider": "local Ollama",
+    "model": "qwen2:latest",
+    "parameters": "7.6B Q4_0",
+    "note": "成功：读取、审核、查询占用后保存 19:00 待确认草稿；未发布。",
+    "input_file": "examples/inputs/schedule_conflict.json"
+  }
+}

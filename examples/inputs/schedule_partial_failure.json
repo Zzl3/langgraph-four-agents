@@ -1,0 +1,24 @@
+{
+  "material_ids": [
+    "M01",
+    "M04"
+  ],
+  "date": "2026-11-01",
+  "time": "18:00",
+  "available": [
+    "19:00",
+    "20:00"
+  ],
+  "fail_when": [
+    {
+      "action": "save_draft",
+      "args": {
+        "draft": {
+          "material_ids": [
+            "M04"
+          ]
+        }
+      }
+    }
+  ]
+}

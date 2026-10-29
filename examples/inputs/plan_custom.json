@@ -1,0 +1,43 @@
+{
+  "theme": "美食活动",
+  "budget": 10,
+  "deadline_hours": 4,
+  "plan_data": {
+    "materials": [
+      {
+        "id": "FOOD",
+        "description": "家常菜素材",
+        "keywords": [
+          "美食"
+        ]
+      },
+      {
+        "id": "SUB",
+        "description": "字幕素材",
+        "keywords": [
+          "字幕"
+        ]
+      }
+    ],
+    "options": {
+      "premium": {
+        "steps": [
+          {
+            "name": "拍摄",
+            "cost": 12,
+            "hours": 2
+          }
+        ]
+      },
+      "basic": {
+        "steps": [
+          {
+            "name": "剪辑",
+            "cost": 8,
+            "hours": 2
+          }
+        ]
+      }
+    }
+  }
+}

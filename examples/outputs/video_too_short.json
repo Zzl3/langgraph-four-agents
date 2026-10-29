@@ -1,0 +1,103 @@
+{
+  "task": "video",
+  "model": "mock",
+  "result": {
+    "status": "incomplete",
+    "reason": "脚本超过目标时长，无法验证合规版本",
+    "seconds": 1,
+    "source_ids": [
+      "P01"
+    ]
+  },
+  "trace": [
+    {
+      "step": 1,
+      "action": "search_product",
+      "args": {
+        "query": "字幕"
+      },
+      "reason": "根据主题检索素材",
+      "observation": {
+        "ok": true,
+        "materials": [
+          {
+            "id": "P01",
+            "keywords": [
+              "字幕",
+              "视频",
+              "剪辑"
+            ],
+            "fact": "支持字幕"
+          }
+        ]
+      },
+      "decision_source": "mock"
+    },
+    {
+      "step": 2,
+      "action": "estimate_duration",
+      "args": {
+        "scenes": [
+          {
+            "seconds": 5,
+            "visual": "纯色背景",
+            "narration": "创作者，一起看看这项功能。",
+            "source_id": null
+          },
+          {
+            "seconds": 27,
+            "visual": "竖屏文字卡片",
+            "narration": "支持字幕",
+            "source_id": "P01"
+          },
+          {
+            "seconds": 6,
+            "visual": "纯色背景",
+            "narration": "你会怎么使用？",
+            "source_id": null
+          }
+        ]
+      },
+      "reason": "估算首稿",
+      "observation": {
+        "ok": true,
+        "seconds": 38.0,
+        "scene_seconds": [
+          5.0,
+          27.0,
+          6.0
+        ],
+        "method": "每秒最多4个非空白字符；分镜时长取设定值与旁白估算值的较大者"
+      },
+      "decision_source": "mock"
+    },
+    {
+      "step": 3,
+      "action": "estimate_duration",
+      "args": {
+        "scenes": [
+          {
+            "seconds": 0.5,
+            "visual": "竖屏文字卡片",
+            "narration": "支持字幕",
+            "source_id": "P01"
+          }
+        ]
+      },
+      "reason": "删除非事实镜头，保留有来源的事实并重新估算",
+      "observation": {
+        "ok": true,
+        "seconds": 1,
+        "scene_seconds": [
+          1
+        ],
+        "method": "每秒最多4个非空白字符；分镜时长取设定值与旁白估算值的较大者"
+      },
+      "decision_source": "mock"
+    }
+  ],
+  "final_decision": {
+    "action": "finish",
+    "reason": "脚本超过目标时长，无法验证合规版本"
+  }
+}
