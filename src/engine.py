@@ -72,7 +72,7 @@ def repeated_successful_call(action, args, trace):
 
 
 def _decide(state: State) -> dict:
-    from .tasks import documents_conflict, mock_decide, qa_query, tool_specs
+    from .tasks import documents_conflict, mock_decide, qa_query, remaining_plan_hours, tool_specs
     from .prompts import TASK_GUIDANCE
     if state['model'] == 'mock':
         if state.get('resume_pending') and state['trace'] and not state['trace'][-1]['observation'].get('ok'):
@@ -117,6 +117,8 @@ def _decide(state: State) -> dict:
                 'possible_conflict': documents_conflict(read_docs) if read_docs else False,
                 'read_document_ids': [doc['id'] for doc in read_docs],
             }
+        if state['task'] == 'plan':
+            payload['remaining_deadline_hours'] = remaining_plan_hours(state['request'],state)
         if state.get('resume_pending'):
             payload['resume_context'] = '已恢复此前轨迹，请基于失败或成功结果选择重试、调整或结束。'
         client = OpenAI(api_key=os.environ['OPENAI_API_KEY'], base_url=os.environ.get('OPENAI_BASE_URL') or None,

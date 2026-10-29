@@ -104,6 +104,15 @@ def absolute_deadline_hours(value):
         raise ValueError('截止时间必须包含时区')
     return (deadline - datetime.now(timezone.utc)).total_seconds() / 3600
 
+def remaining_plan_hours(req, state):
+    """Use one elapsed-time calculation for both save validation and reported gaps."""
+    if req.get('deadline') is not None:
+        return absolute_deadline_hours(req['deadline'])
+    import time
+    deadline_hours = req.get('deadline_hours',-1)
+    elapsed = max(0,time.monotonic()-state.get('started_monotonic',time.monotonic())) / 3600
+    return deadline_hours-elapsed
+
 def plan_deadline_field(req):
     return {'deadline':req['deadline']} if req.get('deadline') is not None else {'deadline_hours':req.get('deadline_hours')}
 
@@ -196,6 +205,10 @@ def exact_sum(values):
 def positive_gap(value, limit):
     from decimal import Decimal
     return decimal_result(max(Decimal(0), Decimal(str(value)) - Decimal(str(limit))))
+
+def positive_time_gap(value, limit):
+    gap=positive_gap(value,limit)
+    return 0 if gap < 1e-5 else gap
 
 def valid_plan_steps(steps):
     if not isinstance(steps,list) or not steps:
@@ -303,32 +316,104 @@ def question_has_evidence(query, doc):
     return len(matches) >= 2 or (matched_intent and bool(matches))
 
 def documents_conflict(docs):
-    """Detect a few explicit contradictions; absence of detection is not proof of agreement."""
+    """Detect conflicts only when each quantity is tied to the same topic and property."""
     import re
-    quantities = []
-    polarities = []
-    quantity_shapes = []
-    polarity_shapes = []
+    number_pattern=re.compile(r'(\d+(?:\.\d+)?)\s*(天|日|小时|分钟|个月|月|年)')
+    clause_break=re.compile(r'[。！？；;，,、\n]|但是|并且|同时|且|但')
+    property_markers={
+        'generic_deadline':('期限','时限','周期'),
+        'submission':('提交','递交','报送'),
+        'filing':('申报',), 'reporting':('报备',),
+        'review':('审核','审查'), 'approval':('审批','批准'), 'verification':('复核',),
+        'payment':('付款','支付'), 'receipt':('到账',),
+        'settlement':('结算',), 'distribution':('发放',),
+    }
+    scope_markers={
+        'geography':{
+            'domestic':('国内','境内','大陆','内地'),
+            'overseas':('海外','境外','国外'),
+            'east_china':('华东',),'south_china':('华南',),'north_china':('华北',),
+            'central_china':('华中',),'southwest_china':('西南',),'northwest_china':('西北',),
+        },
+        'audience':{
+            'employee':('员工','职工'),'contractor':('外包','供应商'),
+            'intern':('实习生','实习'),'student':('学生',),'teacher':('教师','老师'),
+            'manager':('经理','管理人员'),'supervisor':('主管',),
+        },
+        'employment':{
+            'full_time':('全职','正式员工'),'part_time':('兼职',),'probation':('试用期',),
+        },
+    }
+    temporal_fillers=('应在','必须在','须在','内完成','内提交','天内','日内','完成','为','是','在','内','的')
+    quantities=[]
+    polarities=[]
+    polarity_shapes=[]
+    uncertain_quantity=False
     for doc in docs:
-        text = str(doc.get('text',''))
-        values = {}
-        for number, unit in re.findall(r'(\d+(?:\.\d+)?)\s*(天|日|小时|分钟|个月|月|年)', text):
-            unit = {'日':'天','个月':'月'}.get(unit,unit)
-            values.setdefault(unit,set()).add(float(number))
-        quantities.append(values)
-        shape = re.sub(r'(\d+(?:\.\d+)?)\s*(天|日|小时|分钟|个月|月|年)', lambda m:'#'+{'日':'天','个月':'月'}.get(m.group(2),m.group(2)), text)
-        quantity_shapes.append(re.sub(r'[\s，。,.！!？?]', '', shape))
-        negative = any(w in text for w in ('不允许','不可以','不支持','禁止'))
-        positive = any(w in text for w in ('允许','可以','支持')) and not negative
+        text=str(doc.get('text',''))
+        records=[]
+        matches=list(number_pattern.finditer(text))
+        boundaries=[(0,0)]+[(m.start(),m.end()) for m in clause_break.finditer(text)]+[(len(text),len(text))]
+        for (_,clause_start),(clause_end,next_start) in zip(boundaries,boundaries[1:]):
+            clause_matches=[m for m in matches if clause_start<=m.start()<clause_end]
+            for index,match in enumerate(clause_matches):
+                prior_end=clause_matches[index-1].end() if index else clause_start
+                prefix=text[prior_end:match.start()]
+                found={category for category,markers in property_markers.items()
+                       if any(marker in prefix for marker in markers)}
+                specific=found-{'generic_deadline'}
+                if specific:
+                    attributes=specific
+                elif found:
+                    attributes=found
+                elif index==len(clause_matches)-1:
+                    suffix=text[match.end():clause_end]
+                    attributes={category for category,markers in property_markers.items()
+                                if any(marker in suffix for marker in markers)}
+                else:
+                    attributes=set()
+                if len(attributes)!=1:
+                    uncertain_quantity=True
+                    continue
+                clause=text[clause_start:clause_end]
+                context=str(doc.get('title',''))+' '+clause
+                context=number_pattern.sub(' ',context)
+                for markers in property_markers.values():
+                    for marker in markers:
+                        context=context.replace(marker,' ')
+                for filler in temporal_fillers:
+                    context=context.replace(filler,' ')
+                topic=query_grams(context)
+                if topic:
+                    unit={'日':'天','个月':'月'}.get(match.group(2),match.group(2))
+                    scope_text=str(doc.get('title',''))+' '+clause
+                    scope={group:frozenset(label for label,terms in choices.items()
+                                           if any(term in scope_text for term in terms))
+                           for group,choices in scope_markers.items()}
+                    scope={group:labels for group,labels in scope.items() if labels}
+                    if any(len(labels)>1 for labels in scope.values()):
+                        uncertain_quantity=True
+                        continue
+                    records.append((unit,float(match.group(1)),topic,attributes,scope))
+        quantities.append(records)
+        negative=any(w in text for w in ('不允许','不可以','不支持','禁止'))
+        positive=any(w in text for w in ('允许','可以','支持')) and not negative
         polarities.append('negative' if negative else 'positive' if positive else None)
-        shape = text.replace('不允许','允许').replace('不可以','可以').replace('不支持','支持').replace('禁止','允许')
-        polarity_shapes.append(re.sub(r'[\s，。,.！!？?]', '', shape))
+        shape=text.replace('不允许','允许').replace('不可以','可以').replace('不支持','支持').replace('禁止','允许')
+        polarity_shapes.append(re.sub(r'[\s，。,.！!？?]','',shape))
     for i in range(len(docs)):
         for j in range(i+1,len(docs)):
-            for unit in quantities[i].keys() & quantities[j].keys():
-                if quantity_shapes[i] == quantity_shapes[j] and quantities[i][unit].isdisjoint(quantities[j][unit]): return True
-            if polarity_shapes[i] == polarity_shapes[j] and {polarities[i],polarities[j]} == {'positive','negative'}: return True
-    return False
+            for unit_a,value_a,topic_a,attribute_a,scope_a in quantities[i]:
+                for unit_b,value_b,topic_b,attribute_b,scope_b in quantities[j]:
+                    same_scope=scope_a==scope_b
+                    if scope_a!=scope_b and (scope_a or scope_b):
+                        uncertain_quantity=True
+                    if (unit_a==unit_b and value_a!=value_b and attribute_a==attribute_b
+                        and same_scope and topic_a & topic_b):
+                        return True
+            if polarity_shapes[i]==polarity_shapes[j] and {polarities[i],polarities[j]}=={'positive','negative'}:
+                return True
+    return None if uncertain_quantity else False
 
 def tool_specs(task):
     return {
@@ -444,15 +529,13 @@ def execute_tool(task, action, args, state):
                 return {'ok':False,'error':'总费用或耗时无效'}
             return {'ok':True,'option':args['option'],'cost':cost,'hours':hours,'steps':steps}
         if action == 'save_plan':
-            import time
             if not isinstance(args.get('plan'), dict):
                 return {'ok':False,'error':'参数必须是 {"plan":{...}}；不要把计划字段放在 args 顶层。计划字段必须逐项来自工具结果，不能添加 saved、duplicate 或未提供的 deadline。先检查所有方案是否同时满足预算和剩余时间，再保存。'}
             plan = args['plan']
             estimates = [x['observation'] for x in state['trace'] if x['action']=='estimate_cost' and x['observation'].get('ok')]
             estimate = next ( (x for x in estimates if x['option']==plan.get('option')), None)
             script = last(state['trace'], 'generate_script')
-            remaining = (absolute_deadline_hours(req['deadline']) if req.get('deadline') is not None
-                         else req.get('deadline_hours', -1) - max(0, time.monotonic()-state.get('started_monotonic',time.monotonic())) / 3600)
+            remaining = remaining_plan_hours(req,state)
             deadline_field = plan_deadline_field(req)
             allowed_fields = {'theme','material_id','option','budget','cost','hours','steps','task_step_status','script'} | set(deadline_field)
             if not isinstance(plan,dict) or set(plan) != allowed_fields:
@@ -616,7 +699,7 @@ def mock_decide(state):
         if trace[-1]['action'] in ('save_draft','save_plan'): result['saved'] = False
         return finish(result, '工具失败，保留已成功步骤并停止')
     if task == 'schedule': return decide_schedule(req, trace)
-    if task == 'plan': return decide_plan(req, trace)
+    if task == 'plan': return decide_plan(req, trace, state)
     if task == 'qa': return decide_qa(req, trace)
     if task == 'video': return decide_video(req, trace)
     return finish({'status':'incomplete','reason':'未知任务'})
@@ -676,11 +759,13 @@ def decide_schedule(req, trace):
     if not all_saved: result['reason']='部分素材审核未通过、资料不足或无可用时段'
     return finish(result)
 
-def decide_plan(req, trace):
+def decide_plan(req, trace, state=None):
+    state=state or {}
+    remaining_hours=remaining_plan_hours(req,state)
     if not req.get('theme') or req.get('budget') is None or req.get('deadline_hours') is None:
         return finish({'status':'incomplete','reason':'缺少主题、预算或截止时间（deadline_hours）'})
-    if (not finite_number(req['budget']) or not finite_number(req['deadline_hours'])
-        or req['budget'] < 0 or req['deadline_hours'] <= 0):
+    if (not finite_number(req['budget']) or not finite_number(remaining_hours)
+        or req['budget'] < 0 or remaining_hours <= 0):
         return finish({'status':'incomplete','reason':'预算或可用时间无效'})
     found = last(trace,'search_material')
     if found is None: return act('search_material',{'query':req['theme']},'检索活动素材')
@@ -697,7 +782,7 @@ def decide_plan(req, trace):
             continue
         estimate = latest['observation'] if latest else None
         if estimate is None: return act('estimate_cost',{'option':option},'估算初始方案' if not estimates else '前一方案超出限制，估算替代方案')
-        if estimate['cost'] <= req['budget'] and estimate['hours'] <= req['deadline_hours']:
+        if estimate['cost'] <= req['budget'] and estimate['hours'] <= remaining_hours:
             plan = {'theme':req['theme'],'material_id':script['material_id'],'option':option,'budget':req['budget'], **plan_deadline_field(req),
                     'cost':estimate['cost'],'hours':estimate['hours'],'steps':estimate['steps'],
                     'task_step_status':[{'name':x['name'],'status':'planned'} for x in estimate['steps']],
@@ -709,9 +794,9 @@ def decide_plan(req, trace):
                            'estimate_attempts':[{'option':x['args']['option'], 'status':'completed' if x['observation'].get('ok') else 'failed', 'result':x['observation']} for x in attempts]})
     return finish({'status':'incomplete','reason':'没有同时满足预算与时间的方案',
                    'budget_gap':min(positive_gap(x['cost'],req['budget']) for x in estimates),
-                   'deadline_gap_hours':min(positive_gap(x['hours'],req['deadline_hours']) for x in estimates),
+                   'deadline_gap_hours':min(positive_time_gap(x['hours'],remaining_hours) for x in estimates),
                    'option_gaps':[{'option':x['option'],'budget_gap':positive_gap(x['cost'],req['budget']),
-                                   'deadline_gap_hours':positive_gap(x['hours'],req['deadline_hours'])} for x in estimates],
+                                   'deadline_gap_hours':positive_time_gap(x['hours'],remaining_hours)} for x in estimates],
                    'estimates':estimates,'script':script['script'],'completed_steps':['search_material','generate_script','estimate_cost']})
 
 def decide_qa(req, trace):
@@ -868,9 +953,10 @@ def validate_final(state, result):
             if script is not None: normalized['script']=script
             if estimates:
                 normalized['estimates']=estimates
-                if finite_number(req.get('budget')) and finite_number(req.get('deadline_hours')):
+                remaining_hours = remaining_plan_hours(req,state)
+                if finite_number(req.get('budget')) and finite_number(remaining_hours):
                     normalized['option_gaps']=[{'option':x['option'],'budget_gap':positive_gap(x['cost'],req['budget']),
-                                                'deadline_gap_hours':positive_gap(x['hours'],req['deadline_hours'])} for x in estimates]
+                                                'deadline_gap_hours':positive_time_gap(x['hours'],remaining_hours)} for x in estimates]
                     normalized['budget_gap']=min(x['budget_gap'] for x in normalized['option_gaps'])
                     normalized['deadline_gap_hours']=min(x['deadline_gap_hours'] for x in normalized['option_gaps'])
         return normalized
@@ -879,7 +965,13 @@ def validate_final(state, result):
     if task == 'qa' and status in ('incomplete','insufficient'):
         if status == 'insufficient':
             docs = [x['observation']['document'] for x in trace if x['action']=='read_doc' and x['observation'].get('ok')]
-            texts = {d['text'] for d in docs}
+            query = qa_query(state['request'])
+            relevant = [d for d in docs if question_has_evidence(query,d)]
+            texts = {d['text'] for d in relevant}
+            if len(texts)>1 and documents_conflict(relevant):
+                citations=[{'id':d['id'],'date':d['date'],'excerpt':d['text']} for d in docs]
+                return {'status':'conflict','answer':'资料存在不同表述，适用范围与优先级未明确，请确认适用制度。',
+                        'citations':citations,'gaps':['适用范围或优先级']}
             question = state['request'].get('question', '')
             gap = ('资料内容不同，其适用范围或相互关系未确定' if len(texts)>1
                    else f'缺少能回答“{question}”的完整资料')

@@ -2,7 +2,7 @@
 
 ## 可复现的离线验证
 
-运行 `.venv/bin/python -m pytest -q`。本次结果为 66 passed；测试结果保存在 [`examples/test-results.txt`](../examples/test-results.txt)，输入在 `examples/inputs/`，完整 JSON 结果和逐步工具轨迹在 `examples/outputs/`。`python -m examples.generate` 可重新生成离线规则模式记录；`python -m examples.http_demo` 生成四题（排期两条路径）的本地模拟 HTTP 服务记录，不是真实模型。
+运行 `.venv/bin/python -m pytest -q`。本次结果为 72 passed；测试结果保存在 [`examples/test-results.txt`](../examples/test-results.txt)，输入在 `examples/inputs/`，完整 JSON 结果和逐步工具轨迹在 `examples/outputs/`。`python -m examples.generate` 可重新生成离线规则模式记录；`python -m examples.http_demo` 生成四题（排期两条路径）的本地模拟 HTTP 服务记录，不是真实模型。
 
 离线用例按四题覆盖正常、缺失、风险/冲突、工具失败、重复提交或重规划等边界。它们验证工具约束和最终结果校验，不证明模型推理能力。题目要求的实际结果与轨迹须区分模型来源，不能将 mock 或模拟 HTTP 输出称为真实模型结果。
 
@@ -37,3 +37,7 @@ OPENAI_API_KEY=ollama OPENAI_BASE_URL=http://127.0.0.1:11434/v1 OPENAI_MODEL=qwe
 - 规划、问答、视频真实模型试跑失败；需要进一步修复工具协议提示、结果反馈和规划/改写能力，再做多路径复测。
 - FAQ 召回、冲突识别、时长估算和品牌审查均是有限规则，无法保证语义完备或真实录音时长。
 - SQLite 只协调同一 runtime 文件；不连接线上发布、费用或文档系统，也不保证跨机器并发。
+
+## 独立候选人视角复核
+
+2026-10-29 使用 GPT-6.1 Terra 做只读第二模型评审并复核；没有启动 Ollama，也没有把评审结论当作运行测试。评审指出问答数字冲突匹配过窄、`insufficient` 可能掩盖已经读到的冲突、规划缺口报告未扣除已耗时，以及不同适用范围可能因词汇重叠而误判。对应修复已加入源码和回归测试：冲突启发式把数字绑定到局部属性，并比较词表识别出的适用范围；范围标签冲突或属性不明时不据此判冲突。未覆盖的范围词、同义表达和复杂适用条件仍可能导致漏报或误报，因此这些词汇规则不能验证完整语义。最终答案若请求不足但已读材料与问题相关且规则可检测出冲突，则返回带双份引用的 `conflict`；保存约束与缺口报告共用剩余时限计算，并覆盖相对与绝对截止时间。评审也确认候选人个人贡献、实际时长和人工复核无法从仓库推断，仍需本人据实补充，见 `docs/04-ai-usage.md`。

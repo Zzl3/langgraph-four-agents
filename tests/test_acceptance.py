@@ -37,6 +37,78 @@ def test_qa(tmp_path):
     assert run('qa',{'question':'报销期限多久','documents':changed},runtime=str(tmp_path))['result']['answer']=='报销期限为45天。'
 
 
+def test_qa_detects_quantity_conflict_across_different_sentence_shapes(tmp_path):
+    docs=[
+        {'id':'D01','date':'2025-01-01','title':'费用报销制度','text':'报销提交期限为30天。'},
+        {'id':'D02','date':'2025-02-01','title':'补充制度','text':'报销申请资料须在15天内提交。'},
+    ]
+    result=run('qa',{'question':'报销期限多久','documents':docs},runtime=str(tmp_path))['result']
+    assert result['status']=='conflict'
+    assert [citation['id'] for citation in result['citations']]==['D01','D02']
+    from src.tasks import documents_conflict
+    unrelated=[dict(docs[0],text='年假期限为30天。'),docs[1]]
+    assert not documents_conflict(unrelated)
+    different_property=[dict(docs[1],text='报销审核期限为15天。')]
+    assert not documents_conflict([docs[0],different_property[0]])
+    ambiguous=[dict(docs[0],text='报销期限为30天。'),docs[1]]
+    assert run('qa',{'question':'报销期限多久','documents':ambiguous},runtime=str(tmp_path/'ambiguous'))['result']['status']=='insufficient'
+
+
+def test_qa_compares_each_number_with_its_own_property():
+    from src.tasks import documents_conflict
+    first={'title':'报销制度','text':'报销提交30天审核15天。'}
+    same={'title':'补充报销制度','text':'报销提交30天审核15天！'}
+    swapped={'title':'补充报销制度','text':'报销提交15天审核30天。'}
+    assert documents_conflict([first,swapped])
+    assert not documents_conflict([first,same])
+
+
+def test_qa_does_not_merge_conflicts_across_explicit_scopes(tmp_path):
+    from src.tasks import documents_conflict
+    domestic={'id':'D01','date':'2025-01-01','title':'国内差旅制度','text':'国内差旅报销提交期限为30天。'}
+    overseas={'id':'D02','date':'2025-02-01','title':'海外差旅制度','text':'海外差旅报销提交期限为15天。'}
+    assert documents_conflict([domestic,dict(overseas,text='海外差旅报销提交期限为30天。')]) is not True
+    assert documents_conflict([domestic,overseas]) is None
+    ambiguous={'title':'国内及海外差旅制度','text':'国内海外差旅报销提交期限为15天。'}
+    assert documents_conflict([domestic,ambiguous]) is None
+    result=run('qa',{'question':'差旅报销提交期限多久','documents':[domestic,overseas]},
+               runtime=str(tmp_path))['result']
+    assert result['status']=='insufficient'
+
+
+def test_qa_insufficient_cannot_hide_detected_relevant_conflict(tmp_path):
+    from src.tasks import validate_final
+    req={'question':'报销期限多久'}
+    output=run('qa',req,runtime=str(tmp_path))
+    state={'task':'qa','request':req,'trace':output['trace']}
+    result=validate_final(state,{'status':'insufficient'})
+    assert result['status']=='conflict'
+    assert len(result['citations'])==2 and result['gaps']==['适用范围或优先级']
+
+
+def test_plan_deadline_gap_uses_remaining_runtime(tmp_path):
+    import time
+    from src.tasks import validate_final
+    state={'task':'plan','request':{'theme':'测试','budget':10,'deadline_hours':3},
+           'started_monotonic':time.monotonic()-7200,
+           'trace':[{'action':'estimate_cost','args':{'option':'standard'},
+                     'observation':{'ok':True,'option':'standard','cost':8,'hours':1.5,'steps':[]}}]}
+    result=validate_final(state,{'status':'incomplete'})
+    assert abs(result['deadline_gap_hours']-0.5)<0.001
+    assert abs(result['option_gaps'][0]['deadline_gap_hours']-0.5)<0.001
+
+
+def test_plan_absolute_deadline_gap_uses_same_remaining_time(monkeypatch):
+    import src.tasks
+    monkeypatch.setattr(src.tasks,'absolute_deadline_hours',lambda _:1.0)
+    state={'task':'plan','request':{'theme':'测试','budget':10,'deadline':'2099-01-01T00:00:00+08:00'},
+           'started_monotonic':0,
+           'trace':[{'action':'estimate_cost','args':{'option':'standard'},
+                     'observation':{'ok':True,'option':'standard','cost':8,'hours':1.5,'steps':[]}}]}
+    result=src.tasks.validate_final(state,{'status':'incomplete'})
+    assert result['deadline_gap_hours']==0.5
+
+
 def test_video(tmp_path):
     req={'topic':'字幕','audience':'创作者','platform':'短视频','duration':30,'style':'简洁'}
     a=run('video',req,runtime=str(tmp_path)); assert a['result']['status']=='completed'
@@ -394,7 +466,7 @@ def test_plan_custom_catalog_respects_topic_and_replans(tmp_path):
     missing=run('plan',dict(req,theme='游戏活动'),runtime=str(tmp_path))
     assert missing['result']['status']=='incomplete' and '素材' in missing['result']['reason']
     impossible=run('plan',dict(req,deadline_hours=1),runtime=str(tmp_path))['result']
-    assert impossible['status']=='incomplete' and impossible['deadline_gap_hours']==1
+    assert impossible['status']=='incomplete' and abs(impossible['deadline_gap_hours']-1)<0.001
 
 
 def test_plan_invalid_cost_is_not_recorded_as_success(tmp_path):

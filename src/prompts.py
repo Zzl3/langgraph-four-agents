@@ -8,8 +8,8 @@ TASK_GUIDANCE = {
 逐项输出 items，每项包括 id、date、requested_time、review_status、risk_reasons、missing、saved、suggested_time、confirmation；
 总体包含 status（ready、pending_confirmation 或 incomplete）、items、saved、published:false。
 不要宣称失败的保存成功，部分失败时保留各项真实状态。''',
-    'plan': '''用户的 deadline_hours 是从现在开始的可用小时数；若输入含 deadline，则 deadline_hours 是系统计算的剩余时长，
-保存计划使用原始 deadline 字段而不是 deadline_hours。先获取真实工具结果再选择计划；费用或时长超限时可估算另一选项。
+    'plan': '''deadline_hours 是运行开始时的可用小时数。每轮必须依据 payload.remaining_deadline_hours 判断方案是否仍可行；若输入含 deadline，保存计划使用原始 deadline 字段而不是 deadline_hours。
+先获取真实工具结果再选择计划；费用或时长超限时可估算另一选项。
 只有同时满足预算和剩余时间的方案才能保存；不能满足时继续估算其他选项，全部超限则如实结束。调用 save_plan 时 args 必须严格为 {"plan":{...}}，
 不能把计划对象字段放在 args 顶层，也不能自行添加字段或状态。
 素材必须与用户主题关键词匹配；费用表中的各方案由检索结果的 available_options 提供。

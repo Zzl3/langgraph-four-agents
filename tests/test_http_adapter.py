@@ -47,6 +47,8 @@ def test_http_sdk_runs_remaining_three_tasks(tmp_path, monkeypatch):
         assert qa['result']['status']=='conflict' and len(qa['result']['citations'])==2
         assert video['result']['status']=='completed' and video['result']['seconds']==28
         observations=[item['payload'] for item in server.received]
+        plan_payloads=[item for item in observations if item['task']=='plan']
+        assert plan_payloads and all(3.9 <= item['remaining_deadline_hours'] <= 4 for item in plan_payloads)
         assert any(item['task']=='plan' and any(x['observation'].get('cost')==12 for x in item['observations']) for item in observations)
         assert any(item['task']=='video' and any(x['observation'].get('seconds')==38 for x in item['observations']) for item in observations)
         assert all(item.get('required_query')=='报销期限多久' for item in observations if item['task']=='qa')
