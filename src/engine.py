@@ -71,8 +71,43 @@ def repeated_successful_call(action, args, trace):
     )
 
 
+def video_brand_revision(trace):
+    """Build revision guidance from the latest failed check and later duration estimates."""
+    checks = [(index,entry) for index,entry in enumerate(trace)
+              if entry.get('action')=='check_brand' and entry.get('observation',{}).get('ok')]
+    if not checks or checks[-1][1]['observation'].get('passed'):
+        return None
+    failed_index, failed = checks[-1]
+    later_estimates = [entry for entry in trace[failed_index+1:]
+                       if entry.get('action')=='estimate_duration'
+                       and entry.get('observation',{}).get('ok')]
+    searches = [entry['observation'] for entry in trace
+                if entry.get('action')=='search_product' and entry.get('observation',{}).get('ok')]
+    products = {}
+    for search in searches:
+        for item in search.get('materials',[]):
+            products[(item.get('id'),item.get('fact'))] = item
+    source_ids = set(failed.get('args',{}).get('source_ids',[]))
+    facts = [{'source_id':item['id'],'fact':item['fact']} for item in products.values()
+             if item.get('id') in source_ids and isinstance(item.get('fact'),str)]
+    estimate_pending = bool(later_estimates)
+    return {
+        'required':True,
+        'failed_scene_set':failed.get('args',{}).get('scenes'),
+        'risks':failed['observation'].get('risks',[]),
+        'corrections':failed['observation'].get('corrections',[]),
+        'exact_product_facts':facts,
+        'next_step':'check_brand' if estimate_pending else 'revise_and_estimate',
+        'scenes_to_check':later_estimates[-1]['args'].get('scenes') if estimate_pending else None,
+        'rule':('调用 check_brand 检查 scenes_to_check 中刚刚估时的同一版本。'
+                if estimate_pending else
+                '必须实际改写分镜；产品事实旁白逐字使用 fact 并填对应 source_id，中性旁白 source_id=null。'
+                '先重新估时修订后的分镜，再检查同一版本。不得重复提交失败的分镜。'),
+    }
+
+
 def _decide(state: State) -> dict:
-    from .tasks import documents_conflict, mock_decide, qa_query, remaining_plan_hours, tool_specs
+    from .tasks import documents_conflict, finite_number, mock_decide, qa_query, remaining_plan_hours, tool_specs
     from .prompts import TASK_GUIDANCE
     if state['model'] == 'mock':
         if state.get('resume_pending') and state['trace'] and not state['trace'][-1]['observation'].get('ok'):
@@ -95,6 +130,10 @@ def _decide(state: State) -> dict:
                   "若上一步工具失败，阅读 error 并修正失败步骤的参数后重试；若错误要求重新查询则先查询。"
                   "缺信息、失败、冲突、预算及确认边界必须明确说明。所有输出使用中文。"
                   + TASK_GUIDANCE[state['task']])
+        if state['task'] == 'plan':
+            system += ' plan_state 给出各方案真实估价、脚本状态与预算/剩余时间判定；保存前逐项核对。'
+        if state['task'] == 'video':
+            system += ' 若有 brand_revision，严格按 next_step 阶段执行：修订阶段改写并重新估时；检查阶段对 scenes_to_check 原样进行品牌检查。'
         payload = {'task': state['task'], 'request': state['request'], 'tools': tool_specs(state['task']),
                    'observations': model_observations(state['trace']), 'remaining_calls': state['max_calls'] - state['calls']}
         if state['trace']:
@@ -119,6 +158,31 @@ def _decide(state: State) -> dict:
             }
         if state['task'] == 'plan':
             payload['remaining_deadline_hours'] = remaining_plan_hours(state['request'],state)
+            material_search = next((x['observation'] for x in reversed(state['trace'])
+                                    if x['action']=='search_material' and x['observation'].get('ok')), {})
+            estimates = {x['args'].get('option'):x['observation'] for x in state['trace']
+                         if x['action']=='estimate_cost'}
+            generated_scripts = [x['observation'] for x in state['trace']
+                                 if x['action']=='generate_script' and x['observation'].get('ok')]
+            payload['plan_state'] = {
+                'budget': state['request'].get('budget'),
+                'remaining_deadline_hours': payload['remaining_deadline_hours'],
+                'script_generated':bool(generated_scripts),
+                'script_material_id':generated_scripts[-1].get('material_id') if generated_scripts else None,
+                'options': [{'name':name,
+                             'estimate':estimates.get(name),
+                             'within_limits':bool(estimates.get(name,{}).get('ok')
+                                 and finite_number(state['request'].get('budget'))
+                                 and finite_number(payload['remaining_deadline_hours'])
+                                 and estimates[name].get('cost',float('inf'))<=state['request']['budget']
+                                 and estimates[name].get('hours',float('inf'))<=payload['remaining_deadline_hours'])}
+                            for name in material_search.get('available_options',[])],
+                'rule':'脚本由主题和匹配素材生成，与方案选项无关；先取得匹配素材的脚本，再评估候选方案。只有存在该素材脚本、该选项估价且同时满足预算和剩余时限，才可保存。全部选项评估后仍无可行项则结束并报告缺口。',
+            }
+        if state['task'] == 'video':
+            revision = video_brand_revision(state['trace'])
+            if revision:
+                payload['brand_revision'] = revision
         if state.get('resume_pending'):
             payload['resume_context'] = '已恢复此前轨迹，请基于失败或成功结果选择重试、调整或结束。'
         client = OpenAI(api_key=os.environ['OPENAI_API_KEY'], base_url=os.environ.get('OPENAI_BASE_URL') or None,

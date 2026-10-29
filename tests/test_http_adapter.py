@@ -49,6 +49,11 @@ def test_http_sdk_runs_remaining_three_tasks(tmp_path, monkeypatch):
         observations=[item['payload'] for item in server.received]
         plan_payloads=[item for item in observations if item['task']=='plan']
         assert plan_payloads and all(3.9 <= item['remaining_deadline_hours'] <= 4 for item in plan_payloads)
+        replanning=next(item for item in plan_payloads if any(x['observation'].get('cost')==12 for x in item['observations']))
+        assert replanning['plan_state']['options'][0]['estimate']['cost']==12
+        assert replanning['plan_state']['options'][0]['within_limits'] is False
+        assert replanning['plan_state']['options'][1]['estimate'] is None
+        assert replanning['plan_state']['script_generated'] is True
         assert any(item['task']=='plan' and any(x['observation'].get('cost')==12 for x in item['observations']) for item in observations)
         assert any(item['task']=='video' and any(x['observation'].get('seconds')==38 for x in item['observations']) for item in observations)
         assert all(item.get('required_query')=='报销期限多久' for item in observations if item['task']=='qa')
@@ -58,6 +63,45 @@ def test_http_sdk_runs_remaining_three_tasks(tmp_path, monkeypatch):
         assert qa_payloads[3]['evidence_status']=={
             'all_matches_read':True,'possible_conflict':True,'read_document_ids':['D01','D02']}
         assert qa_payloads[3]['next_required_actions']==[]
+
+
+def test_http_adapter_exposes_exact_facts_after_brand_rejection(tmp_path, monkeypatch):
+    with local_model_service() as server:
+        configure(monkeypatch,server)
+        request={'topic':'字幕','audience':'创作者','platform':'短视频','duration':30,'style':'简洁',
+                 'brand_rules':{'allowed_visuals':[]}}
+        run('video',request,model='real',runtime=str(tmp_path))
+        revision=next(item['payload']['brand_revision'] for item in server.received
+                      if item['payload'].get('brand_revision'))
+        assert revision['required'] is True
+        assert {'source_id':'P01','fact':'支持字幕'} in revision['exact_product_facts']
+        assert revision['next_step']=='revise_and_estimate'
+
+
+def test_video_revision_state_advances_after_estimate_and_keeps_earlier_facts():
+    from src.engine import video_brand_revision
+    scenes=[{'seconds':10,'visual':'纯色背景','narration':'支持字幕','source_id':'P01'}]
+    trace=[
+        {'action':'search_product','observation':{'ok':True,'materials':[{'id':'P01','fact':'支持字幕'}]}},
+        {'action':'search_product','observation':{'ok':True,'materials':[]}},
+        {'action':'check_brand','args':{'scenes':scenes,'source_ids':['P01']},
+         'observation':{'ok':True,'passed':False,'risks':['示例风险'],'corrections':['示例修正']}},
+    ]
+    first=video_brand_revision(trace)
+    assert first['next_step']=='revise_and_estimate'
+    assert {'source_id':'P01','fact':'支持字幕'} in first['exact_product_facts']
+    revised=[dict(scenes[0],seconds=8)]
+    trace.append({'action':'estimate_duration','args':{'scenes':revised},'observation':{'ok':True,'seconds':8}})
+    second=video_brand_revision(trace)
+    assert second['next_step']=='check_brand' and second['scenes_to_check']==revised
+    trace.append({'action':'check_brand','args':{'scenes':revised,'source_ids':['P01']},
+                  'observation':{'ok':True,'passed':False,'risks':['仍有风险']}})
+    third=video_brand_revision(trace)
+    assert third['next_step']=='revise_and_estimate'
+    trace.append({'action':'estimate_duration','args':{'scenes':revised},'observation':{'ok':True,'seconds':8}})
+    trace.append({'action':'check_brand','args':{'scenes':revised,'source_ids':['P01']},
+                  'observation':{'ok':True,'passed':True,'risks':[]}})
+    assert video_brand_revision(trace) is None
 
 
 def test_http_timeout_is_explicit_and_bounded(tmp_path, monkeypatch):
