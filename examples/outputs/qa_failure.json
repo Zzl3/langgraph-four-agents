@@ -3,7 +3,7 @@
   "model": "mock",
   "result": {
     "status": "incomplete",
-    "reason": "read_doc 失败: 模拟工具失败: read_doc",
+    "reason": "read_doc 读取 D01 失败（1 次）：模拟工具失败: read_doc",
     "completed_steps": [
       "search_docs"
     ],
@@ -75,6 +75,6 @@
   ],
   "final_decision": {
     "action": "finish",
-    "reason": "read_doc 失败: 模拟工具失败: read_doc"
+    "reason": "read_doc 读取 D01 失败（1 次）：模拟工具失败: read_doc"
   }
 }
