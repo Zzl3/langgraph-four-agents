@@ -108,8 +108,69 @@ def video_brand_revision(trace):
     }
 
 
+def qa_evidence_context(request, trace, remaining_calls=None):
+    """Expose citation-ready read evidence and a conservative lexical status hint."""
+    from .tasks import documents_conflict, qa_search_state, question_has_evidence
+    search_state=qa_search_state(request,trace)
+    query=search_state['query']
+    failures=search_state['unresolved_search_failures']+search_state['unresolved_read_failures']
+    if failures and (any(item['attempts']>=2 for item in failures)
+                     or (remaining_calls is not None and remaining_calls<=1)):
+        return {'stage':'tool_failure_terminal','can_finish_incomplete':True,
+                'failures':failures,
+                'rule':'检索或读取持续失败，或剩余调用不足以恢复并完成；请以 incomplete 结束，说明失败及已完成步骤，不得声称已有答案。'}
+    if search_state['unresolved_search_failures']:
+        actions=[{'action':'search_docs','args':item['args'],'reason':'重试失败的同一检索，成功观察后才能结束'}
+                 for item in search_state['unresolved_search_failures']]
+        return {'stage':'retry_failed_search','next_required_actions':actions,
+                'required_query':query}
+    if search_state['unresolved_read_failures']:
+        actions=[{'action':'read_doc','args':item['args'],'reason':'重试失败的原文读取'}
+                 for item in search_state['unresolved_read_failures']]
+        return {'stage':'retry_failed_read','next_required_actions':actions,
+                'required_query':query}
+    if not search_state['baseline_succeeded']:
+        return {'stage':'baseline_search_required','required_query':query,
+                'next_required_actions':[{'action':'search_docs','args':{'query':query},
+                                          'reason':'先完成与当前问题一致的基准检索'}]}
+    if search_state['required_reads']:
+        actions=[{'action':'read_doc','args':{'id':doc_id},'reason':'读取检索命中的原文后才能判断答案'}
+                 for doc_id in search_state['required_reads']]
+        return {'stage':'read_required_documents','required_document_ids':search_state['required_reads'],
+                'next_required_actions':actions}
+    ordered_ids = search_state['matched_ids']
+    documents = []
+    read_ids = set()
+    for entry in trace:
+        if entry.get('action')=='read_doc' and entry.get('observation',{}).get('ok'):
+            document = entry['observation'].get('document')
+            if isinstance(document,dict):
+                documents.append(document)
+                read_ids.add(document.get('id'))
+    citations = [{'id':doc['id'],'date':doc.get('date'),'excerpt':doc.get('text','')}
+                 for doc in documents]
+    if not ordered_ids:
+        status, reason = 'insufficient', 'no_matching_documents'
+    elif read_ids != set(ordered_ids):
+        status, reason = 'incomplete', 'read_documents_do_not_match_search_results'
+    else:
+        relevant = all(question_has_evidence(query,doc) for doc in documents)
+        texts = list(dict.fromkeys(doc.get('text') for doc in documents))
+        if not relevant:
+            status, reason = 'insufficient', 'question_not_supported'
+        elif len(texts)==1:
+            status, reason = 'completed', 'single_supported_answer'
+        elif documents_conflict(documents):
+            status, reason = 'conflict', 'verified_numeric_or_polarity_conflict'
+        else:
+            status, reason = 'insufficient', 'relationship_between_sources_unclear'
+    return {'stage':'decide_from_read_evidence','suggested_status':status,'assessment':reason,
+            'citations':citations,
+            'rule':'仅将此状态作为基于现有词汇规则的提示。由你决定是否结束；结束时引用应从 citations 原样复制，不能补造、改写或遗漏支撑结论的文档。'}
+
+
 def _decide(state: State) -> dict:
-    from .tasks import documents_conflict, finite_number, mock_decide, qa_query, remaining_plan_hours, tool_specs
+    from .tasks import documents_conflict, finite_number, mock_decide, qa_search_state, remaining_plan_hours, tool_specs
     from .prompts import TASK_GUIDANCE
     if state['model'] == 'mock':
         if state.get('resume_pending') and state['trace'] and not state['trace'][-1]['observation'].get('ok'):
@@ -136,21 +197,19 @@ def _decide(state: State) -> dict:
             system += ' plan_state 给出各方案真实估价、脚本状态与预算/剩余时间判定；保存前逐项核对。'
         if state['task'] == 'video':
             system += ' 若有 brand_revision，严格按 next_step 阶段执行：修订阶段改写并重新估时；检查阶段对 scenes_to_check 原样进行品牌检查。'
+        if state['task'] == 'qa':
+            system += ' qa_state.stage 为 baseline_search_required、retry_failed_search、retry_failed_read 或 read_required_documents 时先执行 qa_state.next_required_actions；进入 decide_from_read_evidence 后才可给答案、冲突或资料不足；若 qa_state.can_finish_incomplete=true，允许说明工具失败并以 incomplete 提前结束。引用从 qa_state.citations 原样复制。'
         payload = {'task': state['task'], 'request': state['request'], 'tools': tool_specs(state['task']),
                    'observations': model_observations(state['trace']), 'remaining_calls': state['max_calls'] - state['calls']}
         if state['trace']:
             payload['last_observation'] = state['trace'][-1]
         if state['task'] == 'qa':
-            payload['required_query'] = qa_query(state['request'])
-            matches = [doc for entry in state['trace'] if entry['action']=='search_docs'
-                       and entry['observation'].get('ok') for doc in entry['observation'].get('matches',[])]
-            read_ids = {entry['args'].get('id') for entry in state['trace'] if entry['action']=='read_doc'
-                        and entry['observation'].get('ok')}
-            payload['required_document_reads'] = [doc['id'] for doc in matches if doc['id'] not in read_ids]
-            payload['next_required_actions'] = [
-                {'action':'read_doc','args':{'id':doc_id},'reason':'读取检索命中的原文后才能判断答案'}
-                for doc_id in payload['required_document_reads']
-            ]
+            qa_search=qa_search_state(state['request'],state['trace'])
+            payload['required_query'] = qa_search['query']
+            payload['required_document_reads'] = qa_search['required_reads']
+            payload['qa_state'] = qa_evidence_context(state['request'],state['trace'],
+                                                       state['max_calls']-state['calls'])
+            payload['next_required_actions'] = payload['qa_state'].get('next_required_actions',[])
             read_docs = [entry['observation']['document'] for entry in state['trace']
                          if entry['action']=='read_doc' and entry['observation'].get('ok')]
             payload['evidence_status'] = {
@@ -224,7 +283,8 @@ def execute(state: State) -> dict:
     try:
         args = d.get('args', {})
         if repeated_successful_call(d['action'],args,state['trace']):
-            obs = {'ok':False,'error':'相同参数的读取或检查已成功执行，结果已在 observations 中；不要重复调用。请根据已有结果执行下一项尚未完成的动作，或在证据齐全时结束。'}
+            obs = {'ok':False,'code':'repeated_successful_call',
+                   'error':'相同参数的读取或检查已成功执行，结果已在 observations 中；不要重复调用。请根据已有结果执行下一项尚未完成的动作，或在证据齐全时结束。'}
         else:
             obs = execute_tool(state['task'], d['action'], args, state)
     except Exception as e:

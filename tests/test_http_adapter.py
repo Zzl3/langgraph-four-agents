@@ -63,6 +63,15 @@ def test_http_sdk_runs_remaining_three_tasks(tmp_path, monkeypatch):
         assert qa_payloads[3]['evidence_status']=={
             'all_matches_read':True,'possible_conflict':True,'read_document_ids':['D01','D02']}
         assert qa_payloads[3]['next_required_actions']==[]
+        assert qa_payloads[3]['qa_state']['stage']=='decide_from_read_evidence'
+        assert qa_payloads[3]['qa_state']['suggested_status']=='conflict'
+        assert qa_payloads[3]['qa_state']['citations']==[
+            {'id':'D01','date':'2025-01-01','excerpt':'报销期限为30天。'},
+            {'id':'D02','date':'2025-02-01','excerpt':'报销期限为15天。'},
+        ]
+        assert qa_payloads[0]['qa_state']['stage']=='baseline_search_required'
+        assert qa_payloads[1]['qa_state']['stage']=='read_required_documents'
+        assert qa_payloads[0]['next_required_actions']==qa_payloads[0]['qa_state']['next_required_actions']
 
 
 def test_http_adapter_exposes_exact_facts_after_brand_rejection(tmp_path, monkeypatch):
@@ -102,6 +111,52 @@ def test_video_revision_state_advances_after_estimate_and_keeps_earlier_facts():
     trace.append({'action':'check_brand','args':{'scenes':revised,'source_ids':['P01']},
                   'observation':{'ok':True,'passed':True,'risks':[]}})
     assert video_brand_revision(trace) is None
+
+
+def test_qa_evidence_context_requires_search_recovery_baseline_and_read_order():
+    from src.engine import qa_evidence_context
+    req={'question':'报销期限多久'}
+    d1={'id':'D01','date':'2025-01-01','text':'报销期限为30天。'}
+    d2={'id':'D02','date':'2025-02-01','text':'报销期限为15天。'}
+    assert qa_evidence_context(req,[])['stage']=='baseline_search_required'
+    failed=[{'action':'search_docs','args':{'query':'报销期限多久'},'observation':{'ok':False,'error':'temporary'}}]
+    retry=qa_evidence_context(req,failed)
+    assert retry['stage']=='retry_failed_search'
+    assert retry['next_required_actions']==[{'action':'search_docs','args':{'query':'报销期限多久'},
+                                             'reason':'重试失败的同一检索，成功观察后才能结束'}]
+    failed_twice=failed+[dict(failed[0])]
+    failed_twice[1]={'action':'search_docs','args':{'query':'报销期限多久'},
+                     'observation':{'ok':False,'error':'still unavailable'}}
+    terminal=qa_evidence_context(req,failed_twice,remaining_calls=10)
+    assert terminal['stage']=='tool_failure_terminal' and terminal['can_finish_incomplete']
+    assert qa_evidence_context(req,failed,remaining_calls=1)['stage']=='tool_failure_terminal'
+    nonbaseline=[{'action':'search_docs','args':{'query':'报销期限'},
+                  'observation':{'ok':True,'matches':[{'id':'D01'}]}}]
+    assert qa_evidence_context(req,nonbaseline)['stage']=='baseline_search_required'
+    read_failure_trace=[{'action':'search_docs','args':{'query':'报销期限多久'},
+                         'observation':{'ok':True,'matches':[{'id':'D01'}]}},
+                        {'action':'read_doc','args':{'id':'D01'},
+                         'observation':{'ok':False,'error':'read error'}},
+                        {'action':'read_doc','args':{'id':'D01'},
+                         'observation':{'ok':False,'error':'still unavailable'}}]
+    assert qa_evidence_context(req,read_failure_trace,remaining_calls=10)['stage']=='tool_failure_terminal'
+    trace=[{'action':'search_docs','args':{'query':'报销期限多久'},
+            'observation':{'ok':True,'matches':[{'id':'D01'}]}},
+           {'action':'search_docs','args':{'query':'报销期限'},
+            'observation':{'ok':True,'matches':[{'id':'D02'}]}},
+           {'action':'read_doc','args':{'id':'D02'},'observation':{'ok':True,'document':d2}},
+           {'action':'read_doc','args':{'id':'D01'},'observation':{'ok':True,'document':d1}}]
+    context=qa_evidence_context(req,trace)
+    assert context['suggested_status']=='conflict'
+    assert [item['id'] for item in context['citations']]==['D02','D01']
+    trace.append({'action':'search_docs','args':{'query':'报销期限多久'},
+                  'observation':{'ok':False,'code':'repeated_successful_call','error':'duplicate'}})
+    context=qa_evidence_context(req,trace)
+    assert context['stage']=='decide_from_read_evidence'
+    from src.tasks import validate_final
+    state={'task':'qa','request':req,'trace':trace}
+    conflict={'status':'conflict','citations':context['citations']}
+    assert validate_final(state,conflict)['status']=='conflict'
 
 
 def test_http_timeout_is_explicit_and_bounded(tmp_path, monkeypatch):

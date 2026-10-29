@@ -277,6 +277,48 @@ def qa_query(req):
             return f'{question} {content.strip()}'
     return question
 
+def qa_search_state(request, trace):
+    """Summarize search prerequisites shared by model guidance and final validation."""
+    query = qa_query(request)
+    searches = [entry for entry in trace if entry.get('action')=='search_docs']
+    successful = [entry for entry in searches if entry.get('observation',{}).get('ok')]
+    def unresolved(action):
+        failures=[]
+        for index,entry in enumerate(trace):
+            observation=entry.get('observation',{})
+            if (entry.get('action')!=action or observation.get('ok')
+                or observation.get('code')=='repeated_successful_call'):
+                continue
+            recovered=any(later.get('action')==action and later.get('args')==entry.get('args')
+                          and later.get('observation',{}).get('ok') for later in trace[index+1:])
+            later_failed=any(later.get('action')==action and later.get('args')==entry.get('args')
+                             and not later.get('observation',{}).get('ok')
+                             and later.get('observation',{}).get('code')!='repeated_successful_call'
+                             for later in trace[index+1:])
+            if not recovered and not later_failed:
+                attempts=sum(1 for previous in trace[:index+1]
+                             if previous.get('action')==action and previous.get('args')==entry.get('args')
+                             and not previous.get('observation',{}).get('ok')
+                             and previous.get('observation',{}).get('code')!='repeated_successful_call')
+                failures.append({'args':entry.get('args',{}),'attempts':attempts,
+                                 'error':observation.get('error','工具失败')})
+        return failures
+    unresolved_search=unresolved('search_docs')
+    unresolved_reads=unresolved('read_doc')
+    matched_ids = list(dict.fromkeys(
+        doc['id'] for entry in successful for doc in entry.get('observation',{}).get('matches',[])))
+    read_ids = list(dict.fromkeys(
+        entry['observation']['document']['id'] for entry in trace
+        if entry.get('action')=='read_doc' and entry.get('observation',{}).get('ok')
+        and isinstance(entry.get('observation',{}).get('document'),dict)
+        and 'id' in entry['observation']['document']))
+    return {'query':query,'baseline_succeeded':any(entry.get('args',{}).get('query')==query
+                                                    for entry in successful),
+            'unresolved_search_failures':unresolved_search,
+            'unresolved_read_failures':unresolved_reads,'matched_ids':matched_ids,
+            'read_ids':read_ids,
+            'required_reads':[doc_id for doc_id in matched_ids if doc_id not in set(read_ids)]}
+
 def search_documents(query, docs):
     """Simple lexical retrieval plus a small explicit synonym map; not semantic search."""
     query = str(query).lower()
@@ -964,6 +1006,23 @@ def validate_final(state, result):
         return rejected()
     if task == 'qa' and status in ('incomplete','insufficient'):
         if status == 'insufficient':
+            search_state=qa_search_state(state['request'],trace)
+            if not state['request'].get('question'):
+                return {'status':'incomplete','reason':'缺少问题',
+                        'completed_steps':[x['action'] for x in trace if x['observation'].get('ok')],
+                        'step_results':[x for x in trace if x['observation'].get('ok')]}
+            if search_state['unresolved_search_failures']:
+                return {'status':'incomplete','reason':'检索工具失败尚未用相同参数成功恢复',
+                        'completed_steps':[x['action'] for x in trace if x['observation'].get('ok')],
+                        'step_results':[x for x in trace if x['observation'].get('ok')]}
+            if not search_state['baseline_succeeded']:
+                return {'status':'incomplete','reason':'尚未成功完成当前问题的基准检索',
+                        'completed_steps':[x['action'] for x in trace if x['observation'].get('ok')],
+                        'step_results':[x for x in trace if x['observation'].get('ok')]}
+            if set(search_state['matched_ids']) != set(search_state['read_ids']):
+                return {'status':'incomplete','reason':'尚未读取所有检索命中的文档',
+                        'completed_steps':[x['action'] for x in trace if x['observation'].get('ok')],
+                        'step_results':[x for x in trace if x['observation'].get('ok')]}
             docs = [x['observation']['document'] for x in trace if x['action']=='read_doc' and x['observation'].get('ok')]
             query = qa_query(state['request'])
             relevant = [d for d in docs if question_has_evidence(query,d)]
@@ -977,13 +1036,24 @@ def validate_final(state, result):
                    else f'缺少能回答“{question}”的完整资料')
             return {'status':'insufficient','answer':'现有资料不足以回答该问题，请补充资料或明确适用范围。',
                     'citations':[{'id':d['id'],'date':d['date'],'excerpt':d['text']} for d in docs], 'gaps':[gap]}
+        search_state=qa_search_state(state['request'],trace)
         last_error = trace[-1] if trace and not trace[-1]['observation'].get('ok') else None
         if not state['request'].get('question'):
-            reason = '缺少问题'
-        elif last_error:
-            reason = f"{last_error['action']} 失败: {last_error['observation'].get('error','未知错误')}"
+            reason='缺少问题'
+        elif search_state['unresolved_search_failures']:
+            failure=search_state['unresolved_search_failures'][0]
+            reason=f"search_docs 检索失败（{failure['attempts']} 次）：{failure['error']}"
+        elif search_state['unresolved_read_failures']:
+            failure=search_state['unresolved_read_failures'][0]
+            reason=f"read_doc 读取 {failure['args'].get('id')} 失败（{failure['attempts']} 次）：{failure['error']}"
         elif isinstance(result.get('reason'),str) and result['reason'].startswith('决策器失败:'):
             reason = result['reason']
+        elif not search_state['baseline_succeeded']:
+            reason='尚未成功完成当前问题的基准检索'
+        elif set(search_state['matched_ids']) != set(search_state['read_ids']):
+            reason='尚未读取所有检索命中文档'
+        elif last_error and last_error['observation'].get('code')!='repeated_successful_call':
+            reason = f"{last_error['action']} 失败: {last_error['observation'].get('error','未知错误')}"
         else:
             reason = '问答未完成，请查看工具记录'
         return {'status':'incomplete','reason':reason,
@@ -993,7 +1063,8 @@ def validate_final(state, result):
         docs = [x['observation']['document'] for x in trace if x['action']=='read_doc' and x['observation'].get('ok')]
         searches = [x for x in trace if x['action']=='search_docs' and x['observation'].get('ok')]
         for index, entry in enumerate(trace):
-            if entry['action']=='search_docs' and not entry['observation'].get('ok'):
+            if (entry['action']=='search_docs' and not entry['observation'].get('ok')
+                and entry['observation'].get('code')!='repeated_successful_call'):
                 if not any(x['action']=='search_docs' and x['args']==entry['args'] and x['observation'].get('ok')
                            for x in trace[index+1:]): return rejected()
         found_ids = {d['id'] for x in searches for d in x['observation']['matches']}

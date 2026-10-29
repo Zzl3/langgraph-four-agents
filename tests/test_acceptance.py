@@ -102,6 +102,48 @@ def test_qa_insufficient_cannot_hide_detected_relevant_conflict(tmp_path):
     assert len(result['citations'])==2 and result['gaps']==['适用范围或优先级']
 
 
+def test_qa_insufficient_requires_baseline_search_recovery_and_all_reads():
+    from src.tasks import validate_final
+    request={'question':'报销期限多久'}
+    state={'task':'qa','request':request,'trace':[]}
+    assert validate_final(state,{'status':'insufficient'})['status']=='incomplete'
+    failed={'action':'search_docs','args':{'query':'报销期限多久'},
+            'observation':{'ok':False,'error':'temporary'}}
+    state['trace']=[failed]
+    assert validate_final(state,{'status':'insufficient'})['status']=='incomplete'
+    d1={'id':'D01','date':'2025-01-01','title':'报销','text':'报销期限为30天。'}
+    d2={'id':'D02','date':'2025-02-01','title':'报销','text':'报销期限为15天。'}
+    baseline={'action':'search_docs','args':{'query':'报销期限多久'},
+              'observation':{'ok':True,'matches':[{'id':'D01'},{'id':'D02'}]}}
+    read1={'action':'read_doc','args':{'id':'D01'},'observation':{'ok':True,'document':d1}}
+    read2={'action':'read_doc','args':{'id':'D02'},'observation':{'ok':True,'document':d2}}
+    state['trace']=[baseline,read1]
+    assert validate_final(state,{'status':'insufficient'})['status']=='incomplete'
+    state['trace']=[failed,baseline,read1,read2]
+    assert validate_final(state,{'status':'insufficient'})['status']=='conflict'
+    retry= dict(failed)
+    retry['observation']={'ok':True,'matches':[]}
+    state['trace']=[failed,retry]
+    assert validate_final(state,{'status':'insufficient'})['status']=='insufficient'
+
+
+def test_qa_incomplete_reports_unrecovered_failure_after_later_success():
+    from src.tasks import validate_final
+    d1={'id':'D01','date':'2025-01-01','title':'报销','text':'报销期限为30天。'}
+    trace=[
+        {'action':'search_docs','args':{'query':'报销期限多久'},
+         'observation':{'ok':True,'matches':[{'id':'D01'}]}},
+        {'action':'search_docs','args':{'query':'报销补贴'},
+         'observation':{'ok':False,'error':'模拟检索中断'}},
+        {'action':'read_doc','args':{'id':'D01'},
+         'observation':{'ok':True,'document':d1}},
+    ]
+    result=validate_final({'task':'qa','request':{'question':'报销期限多久'},'trace':trace},
+                          {'status':'incomplete'})
+    assert result['status']=='incomplete'
+    assert 'search_docs 检索失败' in result['reason'] and '模拟检索中断' in result['reason']
+
+
 def test_plan_deadline_gap_uses_remaining_runtime(tmp_path):
     import time
     from src.tasks import validate_final
