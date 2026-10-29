@@ -287,7 +287,31 @@
     ],
     "final_decision": {
       "action": "finish",
-      "reason": "替代时段等待用户确认，尚未发布"
+      "reason": "替代时段等待用户确认，尚未发布",
+      "decision_source": "real",
+      "model_reason": "已根据工具结果结束",
+      "proposal": {
+        "status": "pending_confirmation",
+        "items": [
+          {
+            "id": "M01",
+            "date": "2026-11-01",
+            "requested_time": "18:00",
+            "review_status": "approved",
+            "risk_reasons": [],
+            "missing": [],
+            "saved": true,
+            "suggested_time": "19:00",
+            "confirmation": "原要求 18:00 不可用，建议 19:00，等待用户确认",
+            "duplicate": false
+          }
+        ],
+        "saved": true,
+        "published": false,
+        "suggested_time": "19:00",
+        "confirmation": "原要求 18:00 不可用，建议 19:00，等待用户确认",
+        "duplicate": false
+      }
     }
   }
 }

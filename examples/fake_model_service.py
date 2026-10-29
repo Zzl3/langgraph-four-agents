@@ -9,7 +9,7 @@ from src.tasks import mock_decide
 
 
 @contextmanager
-def local_model_service(fail_after_observations=None, delay_seconds=0):
+def local_model_service(fail_after_observations=None, malformed_after_observations=None, delay_seconds=0):
     class Handler(BaseHTTPRequestHandler):
         def log_message(self, format, *args):
             pass
@@ -24,6 +24,13 @@ def local_model_service(fail_after_observations=None, delay_seconds=0):
             if fail_after_observations is not None and len(observations) >= fail_after_observations:
                 status = 400
                 response = {'error':{'message':'simulated provider failure','type':'invalid_request_error'}}
+                decision = None
+            elif (malformed_after_observations is not None
+                  and len(observations) >= malformed_after_observations):
+                status = 200
+                response = {'id':'chatcmpl-local','object':'chat.completion','created':0,'model':'local-simulator',
+                            'choices':[{'index':0,'finish_reason':'stop',
+                                        'message':{'role':'assistant','content':'{invalid json'}}]}
                 decision = None
             else:
                 status = 200

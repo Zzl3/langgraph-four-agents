@@ -339,6 +339,8 @@ def test_malformed_model_result_preserves_trace(tmp_path, monkeypatch):
     output=run('schedule',req,runtime=str(tmp_path))
     assert output['result']['status']=='incomplete' and output['result']['code']=='unverified_result'
     assert output['final_decision']['reason']==output['result']['reason']
+    assert output['final_decision']['proposal']=={'status':'ready','items':[42],'saved':True,'published':False}
+    assert output['final_decision']['decision_source']=='mock'
     assert len(output['trace'])==1
 
 
@@ -702,6 +704,7 @@ def test_schedule_does_not_repeat_forged_confirmation_in_reasons(tmp_path, monke
     save=next(x for x in output['trace'] if x['action']=='save_draft')
     assert '发布成功' not in save['reason'] and '已同意' not in save['reason']
     assert '已经发布' not in output['final_decision']['reason']
+    assert '已经发布' not in output['final_decision']['model_reason']
 
 
 def test_plan_summary_does_not_invent_execution_or_status(tmp_path):

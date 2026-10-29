@@ -177,6 +177,45 @@
   ],
   "final_decision": {
     "action": "finish",
-    "reason": "依据工具结果完成当前任务"
+    "reason": "依据工具结果完成当前任务",
+    "decision_source": "mock",
+    "model_reason": "已根据工具结果结束",
+    "proposal": {
+      "status": "completed",
+      "title": "字幕",
+      "scenes": [
+        {
+          "seconds": 4,
+          "visual": "纯色背景",
+          "narration": "创作者，一起看看这项功能。",
+          "source_id": null
+        },
+        {
+          "seconds": 20,
+          "visual": "竖屏文字卡片",
+          "narration": "支持字幕",
+          "source_id": "P01"
+        },
+        {
+          "seconds": 4,
+          "visual": "纯色背景",
+          "narration": "你会怎么使用？",
+          "source_id": null
+        }
+      ],
+      "seconds": 28.0,
+      "estimated_scene_seconds": [
+        4.0,
+        20.0,
+        4.0
+      ],
+      "source_ids": [
+        "P01"
+      ],
+      "risks": [],
+      "audience": "创作者",
+      "platform": "短视频",
+      "style": "简洁"
+    }
   }
 }

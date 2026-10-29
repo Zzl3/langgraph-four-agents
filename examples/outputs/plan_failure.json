@@ -147,6 +147,58 @@
   ],
   "final_decision": {
     "action": "finish",
-    "reason": "estimate_cost 失败: 模拟工具失败: estimate_cost"
+    "reason": "estimate_cost 失败: 模拟工具失败: estimate_cost",
+    "decision_source": "mock",
+    "model_reason": "工具失败，保留已成功步骤并停止",
+    "proposal": {
+      "status": "incomplete",
+      "reason": "estimate_cost 失败: 模拟工具失败: estimate_cost",
+      "completed_steps": [
+        "search_material",
+        "generate_script"
+      ],
+      "step_results": [
+        {
+          "step": 1,
+          "action": "search_material",
+          "args": {
+            "query": "字幕活动"
+          },
+          "reason": "检索活动素材",
+          "observation": {
+            "ok": true,
+            "materials": [
+              {
+                "id": "A01",
+                "description": "字幕功能",
+                "keywords": [
+                  "字幕"
+                ]
+              }
+            ],
+            "available_options": [
+              "standard",
+              "economy"
+            ]
+          },
+          "decision_source": "mock"
+        },
+        {
+          "step": 2,
+          "action": "generate_script",
+          "args": {
+            "material_id": "A01",
+            "option": "standard"
+          },
+          "reason": "生成脚本并保留结果",
+          "observation": {
+            "ok": true,
+            "material_id": "A01",
+            "script": "围绕字幕活动介绍字幕功能"
+          },
+          "decision_source": "mock"
+        }
+      ]
+    }
   }
 }

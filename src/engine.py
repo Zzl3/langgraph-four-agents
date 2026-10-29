@@ -26,6 +26,7 @@ class State(TypedDict, total=False):
     checkpoint_error: str
     trace_file: str
     trace_error: str
+    decision_source: str
 
 def append_trace(path, event):
     with open(path,'a',encoding='utf-8') as stream:
@@ -257,7 +258,7 @@ def _decide(state: State) -> dict:
         decision = json.loads(response.choices[0].message.content)
     if not isinstance(decision, dict) or not isinstance(decision.get('action'), str):
         raise ValueError('模型返回的决策格式无效')
-    return {'decision': decision}
+    return {'decision': decision,'decision_source':state['model']}
 
 
 def decide(state: State) -> dict:
@@ -267,7 +268,8 @@ def decide(state: State) -> dict:
         return {'decision': {'action': 'finish', 'reason': '决策器失败',
                              'result': {'status': 'incomplete',
                                         'reason': f'决策器失败: {type(e).__name__}: {e}',
-                                        'completed_steps': [x['action'] for x in state['trace'] if x['observation'].get('ok')]}}}
+                                        'completed_steps': [x['action'] for x in state['trace'] if x['observation'].get('ok')]}},
+                'decision_source':'controller_error'}
 
 
 def execute(state: State) -> dict:
@@ -294,7 +296,8 @@ def execute(state: State) -> dict:
         from .tasks import safe_schedule_reason
         reason = safe_schedule_reason(reason, '请根据审核、时段和草稿结果判断')
     entry = {'step': state['calls'] + 1, 'action': d['action'], 'args': d.get('args', {}),
-             'reason': reason, 'observation': obs, 'decision_source':state['model']}
+             'reason': reason, 'observation': obs,
+             'decision_source':state.get('decision_source',state['model'])}
     trace = state['trace'] + [entry]
     updates = {'trace':trace,'calls':state['calls']+1,'resume_pending':False}
     if state.get('trace_file') and not state.get('trace_error'):
@@ -440,9 +443,24 @@ def run(task: str, request: dict, model='mock', max_calls=20, runtime='runtime',
                              'conflict':'资料存在冲突，需要确认适用范围',
                              'insufficient':'资料不足，需要补充',
                              'completed':'依据工具结果完成当前任务'}.get(outcome.get('status'),'请查看工具记录')
-        ending = ({'action':'checkpoint_error','reason':state['checkpoint_error']} if state.get('checkpoint_error') else
-                  {'action':'finish','reason':finish_reason} if final.get('action')=='finish'
-                  else {'action':'limit','reason':'达到工具调用上限'})
+        if state.get('checkpoint_error'):
+            ending={'action':'checkpoint_error','reason':state['checkpoint_error']}
+        elif final.get('action')=='finish':
+            source=state.get('decision_source','controller_error')
+            ending={'action':'finish','reason':finish_reason,'decision_source':source}
+            if source in ('real','mock'):
+                model_reason=final.get('reason','')
+                if task=='schedule':
+                    from .tasks import safe_schedule_reason
+                    model_reason=safe_schedule_reason(model_reason,finish_reason)
+                if isinstance(model_reason,str) and model_reason:
+                    ending['model_reason']=model_reason[:300]
+                if isinstance(final.get('result'),dict):
+                    ending['proposal']=final['result']
+            elif isinstance(final.get('result'),dict):
+                ending['controller_result']=final['result']
+        else:
+            ending={'action':'limit','reason':'达到工具调用上限'}
         result = {'task':task,'model':model,'result':state.get('result', {}),'trace':state['trace'],'final_decision':ending}
         if run_id is not None:
             result.update({'run_id':run_id,'resumed':resume})

@@ -15,6 +15,18 @@
   "trace": [],
   "final_decision": {
     "action": "finish",
-    "reason": "缺少关键信息"
+    "reason": "缺少关键信息",
+    "decision_source": "mock",
+    "model_reason": "已根据工具结果结束",
+    "proposal": {
+      "status": "incomplete",
+      "reason": "缺少关键信息",
+      "missing": [
+        "audience",
+        "platform",
+        "duration",
+        "style"
+      ]
+    }
   }
 }

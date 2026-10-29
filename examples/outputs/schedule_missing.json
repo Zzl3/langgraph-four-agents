@@ -65,6 +65,28 @@
   ],
   "final_decision": {
     "action": "finish",
-    "reason": "素材审核未通过或资料不完整"
+    "reason": "素材审核未通过或资料不完整",
+    "decision_source": "mock",
+    "model_reason": "已根据工具结果结束",
+    "proposal": {
+      "status": "incomplete",
+      "items": [
+        {
+          "id": "M02",
+          "date": "2026-11-01",
+          "requested_time": "18:00",
+          "review_status": "incomplete",
+          "risk_reasons": [],
+          "missing": [
+            "content"
+          ],
+          "saved": false,
+          "suggested_time": null,
+          "confirmation": null
+        }
+      ],
+      "reason": "素材审核未通过或资料不完整",
+      "saved": false
+    }
   }
 }

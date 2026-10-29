@@ -56,6 +56,22 @@
   ],
   "final_decision": {
     "action": "finish",
-    "reason": "资料不足，需要补充"
+    "reason": "资料不足，需要补充",
+    "decision_source": "mock",
+    "model_reason": "已根据工具结果结束",
+    "proposal": {
+      "status": "insufficient",
+      "answer": "检索到的资料未覆盖问题所问的具体信息，请补充资料。",
+      "citations": [
+        {
+          "id": "P01",
+          "date": "2026-01-01",
+          "excerpt": "支持字幕。"
+        }
+      ],
+      "gaps": [
+        "资料未覆盖具体问题"
+      ]
+    }
   }
 }

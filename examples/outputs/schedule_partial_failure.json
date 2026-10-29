@@ -355,6 +355,193 @@
   ],
   "final_decision": {
     "action": "finish",
-    "reason": "save_draft 失败: 模拟指定参数工具失败: save_draft"
+    "reason": "save_draft 失败: 模拟指定参数工具失败: save_draft",
+    "decision_source": "mock",
+    "model_reason": "工具失败，保留已成功步骤并停止",
+    "proposal": {
+      "status": "incomplete",
+      "reason": "save_draft 失败: 模拟指定参数工具失败: save_draft",
+      "completed_steps": [
+        "read_material",
+        "check_rules",
+        "read_material",
+        "check_rules",
+        "query_slots",
+        "save_draft",
+        "query_slots"
+      ],
+      "step_results": [
+        {
+          "step": 1,
+          "action": "read_material",
+          "args": {
+            "id": "M01"
+          },
+          "reason": "读取该素材",
+          "observation": {
+            "ok": true,
+            "material": {
+              "id": "M01",
+              "title": "字幕功能介绍",
+              "content": "支持字幕"
+            }
+          },
+          "decision_source": "mock"
+        },
+        {
+          "step": 2,
+          "action": "check_rules",
+          "args": {
+            "material": {
+              "id": "M01",
+              "title": "字幕功能介绍",
+              "content": "支持字幕"
+            }
+          },
+          "reason": "依据已读取素材检查缺失和风险",
+          "observation": {
+            "ok": true,
+            "missing": [],
+            "risks": [],
+            "status": "approved"
+          },
+          "decision_source": "mock"
+        },
+        {
+          "step": 3,
+          "action": "read_material",
+          "args": {
+            "id": "M04"
+          },
+          "reason": "读取该素材",
+          "observation": {
+            "ok": true,
+            "material": {
+              "id": "M04",
+              "title": "剪辑功能介绍",
+              "content": "支持剪辑"
+            }
+          },
+          "decision_source": "mock"
+        },
+        {
+          "step": 4,
+          "action": "check_rules",
+          "args": {
+            "material": {
+              "id": "M04",
+              "title": "剪辑功能介绍",
+              "content": "支持剪辑"
+            }
+          },
+          "reason": "依据已读取素材检查缺失和风险",
+          "observation": {
+            "ok": true,
+            "missing": [],
+            "risks": [],
+            "status": "approved"
+          },
+          "decision_source": "mock"
+        },
+        {
+          "step": 5,
+          "action": "query_slots",
+          "args": {
+            "date": "2026-11-01",
+            "material_id": "M01"
+          },
+          "reason": "查询该素材所在日期的排期冲突",
+          "observation": {
+            "ok": true,
+            "occupied": [
+              "18:00"
+            ],
+            "local_draft_slots": [],
+            "available": [
+              "19:00",
+              "20:00"
+            ]
+          },
+          "decision_source": "mock"
+        },
+        {
+          "step": 6,
+          "action": "save_draft",
+          "args": {
+            "draft": {
+              "material_ids": [
+                "M01"
+              ],
+              "date": "2026-11-01",
+              "requested_time": "18:00",
+              "suggested_time": "19:00",
+              "status": "pending_confirmation",
+              "confirmation": "原要求 18:00 不可用，建议 19:00，等待用户确认",
+              "published": false
+            }
+          },
+          "reason": "保存未发布草稿；替代时段需要确认",
+          "observation": {
+            "ok": true,
+            "saved": true,
+            "duplicate": false,
+            "key": "42c4641a9c70042ea67ec0f0014b38ca1792a8127d93455863e570cf0390ea75"
+          },
+          "decision_source": "mock"
+        },
+        {
+          "step": 7,
+          "action": "query_slots",
+          "args": {
+            "date": "2026-11-01",
+            "material_id": "M04"
+          },
+          "reason": "查询该素材所在日期的排期冲突",
+          "observation": {
+            "ok": true,
+            "occupied": [
+              "18:00",
+              "19:00"
+            ],
+            "local_draft_slots": [
+              "19:00"
+            ],
+            "available": [
+              "19:00",
+              "20:00"
+            ]
+          },
+          "decision_source": "mock"
+        }
+      ],
+      "items": [
+        {
+          "id": "M01",
+          "date": "2026-11-01",
+          "requested_time": "18:00",
+          "review_status": "approved",
+          "risk_reasons": [],
+          "missing": [],
+          "saved": true,
+          "suggested_time": "19:00",
+          "confirmation": "原要求 18:00 不可用，建议 19:00，等待用户确认",
+          "duplicate": false
+        },
+        {
+          "id": "M04",
+          "date": "2026-11-01",
+          "requested_time": "18:00",
+          "review_status": "approved",
+          "risk_reasons": [],
+          "missing": [],
+          "saved": false,
+          "suggested_time": "20:00",
+          "confirmation": "原要求 18:00 不可用，建议 20:00，等待用户确认",
+          "save_error": "模拟指定参数工具失败: save_draft"
+        }
+      ],
+      "saved": false,
+      "published": false
+    }
   }
 }

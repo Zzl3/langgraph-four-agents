@@ -109,6 +109,30 @@
   ],
   "final_decision": {
     "action": "finish",
-    "reason": "审核和草稿保存完成，尚未发布"
+    "reason": "审核和草稿保存完成，尚未发布",
+    "decision_source": "mock",
+    "model_reason": "已根据工具结果结束",
+    "proposal": {
+      "status": "ready",
+      "items": [
+        {
+          "id": "M99",
+          "date": "2026-11-01",
+          "requested_time": "20:00",
+          "review_status": "approved",
+          "risk_reasons": [],
+          "missing": [],
+          "saved": true,
+          "suggested_time": "20:00",
+          "confirmation": null,
+          "duplicate": false
+        }
+      ],
+      "saved": true,
+      "published": false,
+      "suggested_time": "20:00",
+      "confirmation": null,
+      "duplicate": false
+    }
   }
 }

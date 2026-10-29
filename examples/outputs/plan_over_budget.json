@@ -343,6 +343,78 @@
   ],
   "final_decision": {
     "action": "finish",
-    "reason": "当前已评估方案无法完成，请查看费用和时限缺口"
+    "reason": "当前已评估方案无法完成，请查看费用和时限缺口",
+    "decision_source": "mock",
+    "model_reason": "已根据工具结果结束",
+    "proposal": {
+      "status": "incomplete",
+      "reason": "没有同时满足预算与时间的方案",
+      "budget_gap": 3,
+      "deadline_gap_hours": 0,
+      "option_gaps": [
+        {
+          "option": "standard",
+          "budget_gap": 7,
+          "deadline_gap_hours": 0
+        },
+        {
+          "option": "economy",
+          "budget_gap": 3,
+          "deadline_gap_hours": 0
+        }
+      ],
+      "estimates": [
+        {
+          "ok": true,
+          "option": "standard",
+          "cost": 12,
+          "hours": 4,
+          "steps": [
+            {
+              "name": "脚本",
+              "cost": 4,
+              "hours": 1,
+              "depends_on": []
+            },
+            {
+              "name": "拍摄",
+              "cost": 8,
+              "hours": 3,
+              "depends_on": [
+                "脚本"
+              ]
+            }
+          ]
+        },
+        {
+          "ok": true,
+          "option": "economy",
+          "cost": 8,
+          "hours": 3,
+          "steps": [
+            {
+              "name": "脚本",
+              "cost": 3,
+              "hours": 1,
+              "depends_on": []
+            },
+            {
+              "name": "素材剪辑",
+              "cost": 5,
+              "hours": 2,
+              "depends_on": [
+                "脚本"
+              ]
+            }
+          ]
+        }
+      ],
+      "script": "围绕字幕活动介绍字幕功能",
+      "completed_steps": [
+        "search_material",
+        "generate_script",
+        "estimate_cost"
+      ]
+    }
   }
 }

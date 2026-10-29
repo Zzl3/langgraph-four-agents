@@ -75,6 +75,41 @@
   ],
   "final_decision": {
     "action": "finish",
-    "reason": "read_doc 读取 D01 失败（1 次）：模拟工具失败: read_doc"
+    "reason": "read_doc 读取 D01 失败（1 次）：模拟工具失败: read_doc",
+    "decision_source": "mock",
+    "model_reason": "工具失败，保留已成功步骤并停止",
+    "proposal": {
+      "status": "incomplete",
+      "reason": "read_doc 失败: 模拟工具失败: read_doc",
+      "completed_steps": [
+        "search_docs"
+      ],
+      "step_results": [
+        {
+          "step": 1,
+          "action": "search_docs",
+          "args": {
+            "query": "报销"
+          },
+          "reason": "结合问题及历史检索",
+          "observation": {
+            "ok": true,
+            "matches": [
+              {
+                "id": "D01",
+                "date": "2025-01-01",
+                "title": "费用报销制度"
+              },
+              {
+                "id": "D02",
+                "date": "2025-02-01",
+                "title": "报销制度补充"
+              }
+            ]
+          },
+          "decision_source": "mock"
+        }
+      ]
+    }
   }
 }

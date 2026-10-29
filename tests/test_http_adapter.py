@@ -32,8 +32,21 @@ def test_http_provider_error_preserves_prior_tool_trace(tmp_path, monkeypatch):
         configure(monkeypatch,server)
         output = run('qa',{'question':'报销期限多久'},model='real',runtime=str(tmp_path))
         assert output['result']['status']=='incomplete' and '决策器失败' in output['result']['reason']
+        assert output['final_decision']['decision_source']=='controller_error'
+        assert 'proposal' not in output['final_decision'] and 'model_reason' not in output['final_decision']
         assert len(output['trace'])==1 and output['trace'][0]['action']=='search_docs'
         assert server.received[-1]['payload']['required_query']=='报销期限多久'
+
+
+def test_http_invalid_model_json_is_recorded_as_controller_error(tmp_path, monkeypatch):
+    with local_model_service(malformed_after_observations=1) as server:
+        configure(monkeypatch,server)
+        output=run('qa',{'question':'报销期限多久'},model='real',runtime=str(tmp_path))
+        assert output['result']['status']=='incomplete'
+        assert output['final_decision']['decision_source']=='controller_error'
+        assert 'JSONDecodeError' in output['final_decision']['controller_result']['reason']
+        assert 'proposal' not in output['final_decision'] and 'model_reason' not in output['final_decision']
+        assert len(output['trace'])==1 and output['trace'][0]['decision_source']=='real'
 
 
 def test_http_sdk_runs_remaining_three_tasks(tmp_path, monkeypatch):
@@ -166,6 +179,7 @@ def test_http_timeout_is_explicit_and_bounded(tmp_path, monkeypatch):
         result=run('qa',{'question':'报销期限多久'},model='real',runtime=str(tmp_path))
         assert result['result']['status']=='incomplete'
         assert 'APITimeoutError' in result['result']['reason']
+        assert result['final_decision']['decision_source']=='controller_error'
         assert len(server.received)==1
 
 
@@ -175,6 +189,7 @@ def test_invalid_timeout_does_not_call_provider(tmp_path, monkeypatch):
         monkeypatch.setenv('OPENAI_TIMEOUT_SECONDS','nan')
         result=run('qa',{'question':'报销期限多久'},model='real',runtime=str(tmp_path))
         assert result['result']['status']=='incomplete' and 'OPENAI_TIMEOUT_SECONDS' in result['result']['reason']
+        assert result['final_decision']['decision_source']=='controller_error'
         assert server.received==[]
 
 

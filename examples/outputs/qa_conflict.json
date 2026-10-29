@@ -84,6 +84,27 @@
   ],
   "final_decision": {
     "action": "finish",
-    "reason": "资料存在冲突，需要确认适用范围"
+    "reason": "资料存在冲突，需要确认适用范围",
+    "decision_source": "mock",
+    "model_reason": "已根据工具结果结束",
+    "proposal": {
+      "status": "conflict",
+      "answer": "资料存在冲突，适用范围与优先级未明确，请确认适用制度。",
+      "citations": [
+        {
+          "id": "D01",
+          "date": "2025-01-01",
+          "excerpt": "报销期限为30天。"
+        },
+        {
+          "id": "D02",
+          "date": "2025-02-01",
+          "excerpt": "报销期限为15天。"
+        }
+      ],
+      "gaps": [
+        "适用范围或优先级"
+      ]
+    }
   }
 }

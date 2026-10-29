@@ -18,6 +18,12 @@
   "trace": [],
   "final_decision": {
     "action": "finish",
-    "reason": "缺少主题、预算或截止时间"
+    "reason": "缺少主题、预算或截止时间",
+    "decision_source": "mock",
+    "model_reason": "已根据工具结果结束",
+    "proposal": {
+      "status": "incomplete",
+      "reason": "缺少主题、预算或截止时间（deadline_hours）"
+    }
   }
 }

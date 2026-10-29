@@ -54,6 +54,20 @@
   ],
   "final_decision": {
     "action": "finish",
-    "reason": "依据工具结果完成当前任务"
+    "reason": "依据工具结果完成当前任务",
+    "decision_source": "mock",
+    "model_reason": "已根据工具结果结束",
+    "proposal": {
+      "status": "completed",
+      "answer": "字幕可以手动开启。",
+      "citations": [
+        {
+          "id": "FAQ-1",
+          "date": "2026-01-01",
+          "excerpt": "字幕可以手动开启。"
+        }
+      ],
+      "gaps": []
+    }
   }
 }

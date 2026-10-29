@@ -153,6 +153,15 @@
   ],
   "final_decision": {
     "action": "finish",
-    "reason": "品牌规则检查未通过"
+    "reason": "品牌规则检查未通过",
+    "decision_source": "mock",
+    "model_reason": "已根据工具结果结束",
+    "proposal": {
+      "status": "incomplete",
+      "reason": "品牌规则检查未通过",
+      "risks": [
+        "包含未经证实或禁止的宣传"
+      ]
+    }
   }
 }

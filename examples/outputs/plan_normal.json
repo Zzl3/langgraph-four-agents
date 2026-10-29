@@ -419,6 +419,109 @@
   ],
   "final_decision": {
     "action": "finish",
-    "reason": "依据工具结果完成当前任务"
+    "reason": "依据工具结果完成当前任务",
+    "decision_source": "mock",
+    "model_reason": "已根据工具结果结束",
+    "proposal": {
+      "status": "completed",
+      "plan": {
+        "theme": "字幕活动",
+        "material_id": "A01",
+        "option": "economy",
+        "budget": 10,
+        "deadline_hours": 4,
+        "cost": 8,
+        "hours": 3,
+        "steps": [
+          {
+            "name": "脚本",
+            "cost": 3,
+            "hours": 1,
+            "depends_on": []
+          },
+          {
+            "name": "素材剪辑",
+            "cost": 5,
+            "hours": 2,
+            "depends_on": [
+              "脚本"
+            ]
+          }
+        ],
+        "task_step_status": [
+          {
+            "name": "脚本",
+            "status": "planned"
+          },
+          {
+            "name": "素材剪辑",
+            "status": "planned"
+          }
+        ],
+        "script": "围绕字幕活动介绍字幕功能"
+      },
+      "saved": true,
+      "duplicate": false,
+      "step_status": {
+        "search_material": "completed",
+        "generate_script": "completed",
+        "estimate_cost": "completed",
+        "save_plan": "completed"
+      },
+      "estimate_attempts": [
+        {
+          "option": "standard",
+          "status": "completed",
+          "result": {
+            "ok": true,
+            "option": "standard",
+            "cost": 12,
+            "hours": 4,
+            "steps": [
+              {
+                "name": "脚本",
+                "cost": 4,
+                "hours": 1,
+                "depends_on": []
+              },
+              {
+                "name": "拍摄",
+                "cost": 8,
+                "hours": 3,
+                "depends_on": [
+                  "脚本"
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "option": "economy",
+          "status": "completed",
+          "result": {
+            "ok": true,
+            "option": "economy",
+            "cost": 8,
+            "hours": 3,
+            "steps": [
+              {
+                "name": "脚本",
+                "cost": 3,
+                "hours": 1,
+                "depends_on": []
+              },
+              {
+                "name": "素材剪辑",
+                "cost": 5,
+                "hours": 2,
+                "depends_on": [
+                  "脚本"
+                ]
+              }
+            ]
+          }
+        }
+      ]
+    }
   }
 }

@@ -56,6 +56,12 @@
   ],
   "final_decision": {
     "action": "finish",
-    "reason": "没有素材"
+    "reason": "没有素材",
+    "decision_source": "mock",
+    "model_reason": "已根据工具结果结束",
+    "proposal": {
+      "status": "incomplete",
+      "reason": "没有素材"
+    }
   }
 }

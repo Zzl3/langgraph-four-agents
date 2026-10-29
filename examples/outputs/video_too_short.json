@@ -98,6 +98,13 @@
   ],
   "final_decision": {
     "action": "finish",
-    "reason": "脚本超过目标时长，无法验证合规版本"
+    "reason": "脚本超过目标时长，无法验证合规版本",
+    "decision_source": "mock",
+    "model_reason": "已根据工具结果结束",
+    "proposal": {
+      "status": "incomplete",
+      "reason": "保留事实后仍无法满足时长",
+      "seconds": 1
+    }
   }
 }

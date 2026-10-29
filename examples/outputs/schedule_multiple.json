@@ -255,6 +255,53 @@
   ],
   "final_decision": {
     "action": "finish",
-    "reason": "部分素材审核未通过、资料不足或无可用时段"
+    "reason": "部分素材审核未通过、资料不足或无可用时段",
+    "decision_source": "mock",
+    "model_reason": "已根据工具结果结束",
+    "proposal": {
+      "status": "incomplete",
+      "items": [
+        {
+          "id": "M01",
+          "date": "2026-11-01",
+          "requested_time": "18:00",
+          "review_status": "approved",
+          "risk_reasons": [],
+          "missing": [],
+          "saved": true,
+          "suggested_time": "19:00",
+          "confirmation": "原要求 18:00 不可用，建议 19:00，等待用户确认",
+          "duplicate": false
+        },
+        {
+          "id": "M04",
+          "date": "2026-11-01",
+          "requested_time": "18:00",
+          "review_status": "approved",
+          "risk_reasons": [],
+          "missing": [],
+          "saved": true,
+          "suggested_time": "20:00",
+          "confirmation": "原要求 18:00 不可用，建议 20:00，等待用户确认",
+          "duplicate": false
+        },
+        {
+          "id": "M03",
+          "date": "2026-11-01",
+          "requested_time": "18:00",
+          "review_status": "blocked",
+          "risk_reasons": [
+            "包含违规宣传词：绝对有效"
+          ],
+          "missing": [],
+          "saved": false,
+          "suggested_time": null,
+          "confirmation": null
+        }
+      ],
+      "saved": false,
+      "published": false,
+      "reason": "部分素材审核未通过、资料不足或无可用时段"
+    }
   }
 }

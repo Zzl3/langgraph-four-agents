@@ -2,7 +2,7 @@
 
 ## 可复现的离线验证
 
-运行 `.venv/bin/python -m pytest -q`。本次结果为 78 passed；测试结果保存在 [`examples/test-results.txt`](../examples/test-results.txt)，输入在 `examples/inputs/`，完整 JSON 结果和逐步工具轨迹在 `examples/outputs/`。`python -m examples.generate` 可重新生成离线规则模式记录；`python -m examples.http_demo` 生成四题（排期两条路径）的本地模拟 HTTP 服务记录，不是真实模型。
+运行 `.venv/bin/python -m pytest -q`。本次结果为 79 passed；测试结果保存在 [`examples/test-results.txt`](../examples/test-results.txt)，输入在 `examples/inputs/`，完整 JSON 结果和逐步工具轨迹在 `examples/outputs/`。`python -m examples.generate` 可重新生成离线规则模式记录；`python -m examples.http_demo` 生成四题（排期两条路径）的本地模拟 HTTP 服务记录，不是真实模型。
 
 离线用例按四题覆盖正常、缺失、风险/冲突、工具失败、重复提交或重规划等边界。它们验证工具约束和最终结果校验，不证明模型推理能力。题目要求的实际结果与轨迹须区分模型来源，不能将 mock 或模拟 HTTP 输出称为真实模型结果。
 

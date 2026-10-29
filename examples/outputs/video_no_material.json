@@ -23,6 +23,13 @@
   ],
   "final_decision": {
     "action": "finish",
-    "reason": "资料不足，需要补充"
+    "reason": "资料不足，需要补充",
+    "decision_source": "mock",
+    "model_reason": "已根据工具结果结束",
+    "proposal": {
+      "status": "insufficient",
+      "reason": "无可用素材，请补充产品事实",
+      "source_ids": []
+    }
   }
 }

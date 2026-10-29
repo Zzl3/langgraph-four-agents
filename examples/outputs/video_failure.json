@@ -65,6 +65,40 @@
   ],
   "final_decision": {
     "action": "finish",
-    "reason": "estimate_duration 失败: 模拟工具失败: estimate_duration"
+    "reason": "estimate_duration 失败: 模拟工具失败: estimate_duration",
+    "decision_source": "mock",
+    "model_reason": "工具失败，保留已成功步骤并停止",
+    "proposal": {
+      "status": "incomplete",
+      "reason": "estimate_duration 失败: 模拟工具失败: estimate_duration",
+      "completed_steps": [
+        "search_product"
+      ],
+      "step_results": [
+        {
+          "step": 1,
+          "action": "search_product",
+          "args": {
+            "query": "字幕"
+          },
+          "reason": "根据主题检索素材",
+          "observation": {
+            "ok": true,
+            "materials": [
+              {
+                "id": "P01",
+                "keywords": [
+                  "字幕",
+                  "视频",
+                  "剪辑"
+                ],
+                "fact": "支持字幕"
+              }
+            ]
+          },
+          "decision_source": "mock"
+        }
+      ]
+    }
   }
 }
