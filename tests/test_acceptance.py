@@ -672,3 +672,18 @@ def test_repeated_immutable_read_is_blocked_but_refreshable_slot_query_is_not():
     assert not repeated_successful_call('read_doc',{'id':'D02'},trace)
     assert not repeated_successful_call('query_slots',{'date':'2026-11-01'},[
         {'action':'query_slots','args':{'date':'2026-11-01'},'observation':{'ok':True}}])
+
+
+def test_model_observations_deduplicate_repeated_results_without_losing_distinct_evidence():
+    from src.engine import model_observations
+    trace=[
+        {'step':1,'action':'search_docs','args':{'query':'q'},'observation':{'ok':True,'matches':['D1','D2']}},
+        {'step':2,'action':'read_doc','args':{'id':'D1'},'observation':{'ok':True,'text':'30 days'}},
+        {'step':3,'action':'search_docs','args':{'query':'q'},'observation':{'ok':True,'matches':['D1','D2']}},
+        {'step':4,'action':'read_doc','args':{'id':'D2'},'observation':{'ok':True,'text':'15 days'}},
+    ]
+    compact=model_observations(trace)
+    assert [(x['action'],x['args']) for x in compact]==[
+        ('search_docs',{'query':'q'}),('read_doc',{'id':'D1'}),('read_doc',{'id':'D2'})]
+    assert compact[0]['repetitions']==2
+    assert len(trace)==4

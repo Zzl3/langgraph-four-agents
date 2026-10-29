@@ -50,6 +50,12 @@ def test_http_sdk_runs_remaining_three_tasks(tmp_path, monkeypatch):
         assert any(item['task']=='plan' and any(x['observation'].get('cost')==12 for x in item['observations']) for item in observations)
         assert any(item['task']=='video' and any(x['observation'].get('seconds')==38 for x in item['observations']) for item in observations)
         assert all(item.get('required_query')=='报销期限多久' for item in observations if item['task']=='qa')
+        qa_payloads=[item for item in observations if item['task']=='qa']
+        assert qa_payloads[1]['required_document_reads']==['D01','D02']
+        assert qa_payloads[2]['required_document_reads']==['D02']
+        assert qa_payloads[3]['evidence_status']=={
+            'all_matches_read':True,'possible_conflict':True,'read_document_ids':['D01','D02']}
+        assert qa_payloads[3]['next_required_actions']==[]
 
 
 def test_http_timeout_is_explicit_and_bounded(tmp_path, monkeypatch):

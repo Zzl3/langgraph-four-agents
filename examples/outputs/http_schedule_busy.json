@@ -1,5 +1,6 @@
 {
   "service_kind": "local_http_simulator",
+  "task": "schedule",
   "notice": "决策由离线规则产生，真实 SDK HTTP 通信；不是大模型决策效果证据。",
   "request": {
     "material_id": "M01",

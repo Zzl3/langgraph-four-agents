@@ -16,7 +16,7 @@ TASK_GUIDANCE = {
 保存所需 plan 的 cost、hours、steps 必须和某次估算完全相同，material_id 和 script 必须来自生成结果。
 plan.task_step_status 按 steps 的顺序列出 {name:步骤名,status:"planned"}；保存方案不表示这些活动已经执行。
 成功时 result 为 {status:"completed",plan:保存的完整计划,saved:true}；失败时说明原因和已成功步骤。''',
-    'qa': '''先用 required_query 检索，再按需补充检索。required_document_reads 中每个 ID 都必须先调用 read_doc 成功读取，列表为空之前不能结束或回答；不能只读第一份。
+    'qa': '''先用 required_query 检索，再按需补充检索。next_required_actions 非空时必须从列表中选择一个动作执行，不能重新执行相同检索。required_document_reads 中每个 ID 都必须先调用 read_doc 成功读取，列表为空之前不能结束或回答；不能只读第一份。
 对 search_docs 返回的每一份匹配文档，都必须读取后再判断答案。
 若 evidence_status.possible_conflict=true 且 all_matches_read=true，必须以 conflict 结束、列出所有原文引用并请求确认适用范围；不得选择其中一份作为答案。
 不得凭空回答；资料明确矛盾时不得自行判断优先级。

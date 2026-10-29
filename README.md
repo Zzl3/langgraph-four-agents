@@ -30,7 +30,7 @@ python -m src.cli plan --input examples/inputs/plan_resume_retry.json --runtime 
 
 续跑保留成功和失败记录，工具调用上限按整个运行累计；核心输入及素材费用表必须一致，示例中的故障注入标志可移除。相对截止时间从首次运行开始计算，暂停期间也计入；运行 ID 已存在时不会覆盖。该机制仅适用于同一机器上的同一 SQLite 文件，属于可信本地运行记录。
 
-`examples.http_demo` 会在本机启动离线模拟服务并通过真实 SDK 的 HTTP 接口生成轨迹，输出明确标为模拟服务，不能证明真实模型效果。
+`examples.http_demo` 会在本机启动离线模拟服务并通过真实 SDK 的 HTTP 接口生成四题的轨迹（排期两条路径），输出明确标为模拟服务，不能证明真实模型效果。记录保存在 `examples/outputs/http_*.json`。
 
 真实模型模式使用 OpenAI 兼容 Chat Completions JSON 接口：设置 `.env.example` 中的环境变量（CLI 会加载工作区 `.env`，环境变量优先），再追加 `--model real`。例如 `cp .env.example .env` 后填写配置，运行 `python -m src.cli qa --input examples/inputs/qa_conflict.json --model real`。所选服务需支持 `response_format=json_object`。`OPENAI_TIMEOUT_SECONDS` 默认 30 秒，模型请求不自动重试；超时或其他服务错误会返回未完成并保留已产生的工具轨迹。真实模型试跑记录及其失败边界见 [评估文档](docs/03-evaluation.md)；不能据少量排期成功案例推断其他任务或总体成功率。模型服务不支持或请求失败时返回未完成。
 

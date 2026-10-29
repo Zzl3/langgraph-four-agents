@@ -42,6 +42,24 @@ def compact_observations(trace):
     return compacted
 
 
+def model_observations(trace):
+    """Deduplicate repeated identical results across the trace sent to a small-context model."""
+    compacted = compact_observations(trace)
+    unique = []
+    positions = {}
+    for entry in compacted:
+        signature = json.dumps({key:entry.get(key) for key in ('action','args','observation')},
+                               ensure_ascii=False,sort_keys=True,separators=(',',':'))
+        if signature not in positions:
+            positions[signature] = len(unique)
+            unique.append(entry)
+            continue
+        index = positions[signature]
+        previous = unique[index]
+        unique[index] = {**entry,'repetitions':previous.get('repetitions',1)+entry.get('consecutive_repetitions',1)}
+    return unique
+
+
 def repeated_successful_call(action, args, trace):
     """Prevent the model from burning the call budget repeating immutable reads/checks."""
     immutable = {'search_material','search_docs','read_doc','search_product','check_rules',
@@ -78,7 +96,7 @@ def _decide(state: State) -> dict:
                   "缺信息、失败、冲突、预算及确认边界必须明确说明。所有输出使用中文。"
                   + TASK_GUIDANCE[state['task']])
         payload = {'task': state['task'], 'request': state['request'], 'tools': tool_specs(state['task']),
-                   'observations': compact_observations(state['trace']), 'remaining_calls': state['max_calls'] - state['calls']}
+                   'observations': model_observations(state['trace']), 'remaining_calls': state['max_calls'] - state['calls']}
         if state['trace']:
             payload['last_observation'] = state['trace'][-1]
         if state['task'] == 'qa':
@@ -88,6 +106,10 @@ def _decide(state: State) -> dict:
             read_ids = {entry['args'].get('id') for entry in state['trace'] if entry['action']=='read_doc'
                         and entry['observation'].get('ok')}
             payload['required_document_reads'] = [doc['id'] for doc in matches if doc['id'] not in read_ids]
+            payload['next_required_actions'] = [
+                {'action':'read_doc','args':{'id':doc_id},'reason':'读取检索命中的原文后才能判断答案'}
+                for doc_id in payload['required_document_reads']
+            ]
             read_docs = [entry['observation']['document'] for entry in state['trace']
                          if entry['action']=='read_doc' and entry['observation'].get('ok')]
             payload['evidence_status'] = {
