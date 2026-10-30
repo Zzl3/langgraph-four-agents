@@ -1,7 +1,0 @@
-{
-  "materials": [{"id":"A01", "description":"字幕功能", "keywords":["字幕"]}],
-  "options": {
-    "standard":{"steps":[{"name":"脚本","cost":4,"hours":1,"depends_on":[]},{"name":"拍摄","cost":8,"hours":3,"depends_on":["脚本"]}]},
-    "economy":{"steps":[{"name":"脚本","cost":3,"hours":1,"depends_on":[]},{"name":"素材剪辑","cost":5,"hours":2,"depends_on":["脚本"]}]}
-  }
-}

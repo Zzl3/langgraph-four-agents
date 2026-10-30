@@ -1,8 +1,0 @@
-{
-  "theme": "字幕活动",
-  "budget": 10,
-  "deadline_hours": 4,
-  "fail_tools": [
-    "generate_script"
-  ]
-}
